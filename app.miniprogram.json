@@ -1,0 +1,52 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/schulte/schulte",
+    "pages/memory/memory",
+    "pages/scan/scan",
+    "pages/stroop/stroop",
+    "pages/react/react",
+    "pages/match/match",
+    "pages/sort/sort",
+    "pages/dual/dual",
+    "pages/training/training",
+    "pages/rank/rank",
+    "pages/profile/profile",
+    "pages/about/about"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#1C1715",
+    "navigationBarTitleText": "专注风暴",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#1C1715",
+    "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "color": "#666666",
+    "selectedColor": "#C07A45",
+    "backgroundColor": "#1C1715",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "images/home.png",
+        "selectedIconPath": "images/home-active.png"
+      },
+      {
+        "pagePath": "pages/rank/rank",
+        "text": "排行",
+        "iconPath": "images/rank.png",
+        "selectedIconPath": "images/rank-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/profile.png",
+        "selectedIconPath": "images/profile-active.png"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

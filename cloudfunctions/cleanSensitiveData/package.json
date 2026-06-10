@@ -1,0 +1,9 @@
+{
+  "name": "cleanSensitiveData",
+  "version": "1.0.0",
+  "description": "清理云数据库中的违规昵称",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

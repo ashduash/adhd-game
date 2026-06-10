@@ -1,0 +1,150 @@
+<view class="page {{show ? 'show' : ''}}" style="background: {{currentSkin.background}}">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="goHome">
+      <text class="back-icon">←</text>
+    </view>
+    <view class="nav-title">
+      <text class="title-text">极速反应</text>
+      <text class="title-sub">反应速度训练</text>
+    </view>
+    <view class="nav-placeholder"></view>
+  </view>
+
+  <!-- 准备屏幕 -->
+  <view class="ready-screen" wx:if="{{gameState === 'ready'}}">
+    <view class="ready-content animate-scale-in">
+      <view class="ready-icon">🎯</view>
+      <text class="ready-title">极速反应</text>
+      <text class="ready-desc">快速点击出现的目标，避开假目标</text>
+      <text class="ready-tip">圆形 = 点击 | 方形 = 不要点击</text>
+
+      <view class="level-selector">
+        <view class="level-btn {{difficulty === 'easy' ? 'active' : ''}}" bindtap="selectDifficulty" data-level="easy"
+          style="{{difficulty === 'easy' ? 'border-color:' + currentSkin.accent + ';background:' + currentSkin.accent + '30' : ''}}">初级</view>
+        <view class="level-btn {{difficulty === 'normal' ? 'active' : ''}}" bindtap="selectDifficulty" data-level="normal"
+          style="{{difficulty === 'normal' ? 'border-color:' + currentSkin.accent + ';background:' + currentSkin.accent + '30' : ''}}">中级</view>
+        <view class="level-btn {{difficulty === 'hard' ? 'active' : ''}}" bindtap="selectDifficulty" data-level="hard"
+          style="{{difficulty === 'hard' ? 'border-color:' + currentSkin.accent + ';background:' + currentSkin.accent + '30' : ''}}">高级</view>
+        <view class="level-btn {{difficulty === 'expert' ? 'active' : ''}}" bindtap="selectDifficulty" data-level="expert"
+          style="{{difficulty === 'expert' ? 'border-color:' + currentSkin.accent + ';background:' + currentSkin.accent + '30' : ''}}">专家</view>
+        <view class="level-btn {{difficulty === 'master' ? 'active' : ''}}" bindtap="selectDifficulty" data-level="master"
+          style="{{difficulty === 'master' ? 'border-color:' + currentSkin.accent + ';background:' + currentSkin.accent + '30' : ''}}">大师</view>
+      </view>
+
+      <button class="btn-primary start-btn" bindtap="startGame" style="background: linear-gradient(135deg, {{currentSkin.accent}} 0%, {{currentSkin.accent}}88 100%)">
+        开始挑战
+      </button>
+      <view class="rules-link" bindtap="openRules">📖 玩法说明</view>
+    </view>
+  </view>
+
+  <!-- 游戏屏幕 -->
+  <view class="game-screen" wx:if="{{gameState === 'playing'}}">
+    <!-- 信息栏 -->
+    <view class="info-bar">
+      <view class="info-item">
+        <text class="info-label">剩余</text>
+        <text class="info-value timer {{timeLeft <= 5 ? 'warning' : ''}}">{{timerDisplay}}s</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">命中</text>
+        <text class="info-value" style="color: #00B894">{{hits}}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">连击</text>
+        <text class="info-value" style="color: {{currentSkin.accent}}">{{combo}}</text>
+      </view>
+    </view>
+
+    <!-- 目标区域 -->
+    <view class="arena" bindtap="tapBackground">
+      <view
+        class="target {{item.isFake ? 'fake' : 'real'}}"
+        wx:for="{{targets}}"
+        wx:key="id"
+        style="left: {{item.x}}%; top: {{item.y}}%; width: {{item.size}}rpx; height: {{item.size}}rpx;"
+        catchtap="tapTarget"
+        data-id="{{item.id}}"
+      >
+        <text class="target-icon">{{item.isFake ? '✕' : '●'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 完成屏幕 -->
+  <view class="finish-screen" wx:if="{{gameState === 'finished'}}">
+    <view class="finish-content animate-scale-in">
+      <view class="rating-container">
+        <view class="rating-circle" style="border-color: {{ratingColor}}; box-shadow: 0 0 40rpx {{ratingColor}}40;">
+          <text class="rating-text" style="color: {{ratingColor}}">{{rating}}</text>
+        </view>
+        <text class="rating-label">反应训练完成！</text>
+      </view>
+
+      <view class="result-card card">
+        <view class="result-item">
+          <text class="result-label">命中率</text>
+          <text class="result-value">{{hitRate}}%</text>
+        </view>
+        <view class="result-divider"></view>
+        <view class="result-item">
+          <text class="result-label">命中/总数</text>
+          <text class="result-value">{{hits}}/{{totalTargets}}</text>
+        </view>
+        <view class="result-divider"></view>
+        <view class="result-item">
+          <text class="result-label">最大连击</text>
+          <text class="result-value">{{maxCombo}}</text>
+        </view>
+      </view>
+
+      <view class="new-record" wx:if="{{isNewRecord}}">
+        <text class="record-icon">🏆</text>
+        <text class="record-text">新纪录！</text>
+      </view>
+
+      <view class="action-buttons">
+        <button class="btn-double" wx:if="{{!doubleClaimed}}" bindtap="watchAdDoublePoints">📺 看视频双倍积分 (+{{earnedPoints}})</button>
+        <button class="btn-double claimed" wx:else disabled>✅ 双倍积分已领取</button>
+        <button class="btn-primary" bindtap="restart" style="background: linear-gradient(135deg, {{currentSkin.accent}} 0%, {{currentSkin.accent}}88 100%)">再来一次</button>
+        <button class="btn-secondary" bindtap="goHome">返回首页</button>
+      </view>
+
+      <button class="share-btn" open-type="share">
+        <text class="share-icon">📤</text>
+        <text class="share-text">分享成绩</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 新手引导 -->
+  <view class="guide-overlay {{showGuide ? 'show' : ''}}" catchtap="closeGuide">
+    <view class="guide-card" catchtap="">
+      <view class="guide-icon">{{guideSteps[guideStep].icon}}</view>
+      <text class="guide-title">{{guideSteps[guideStep].title}}</text>
+      <text class="guide-desc">{{guideSteps[guideStep].desc}}</text>
+      <view class="guide-dots">
+        <view class="guide-dot {{index === guideStep ? 'active' : ''}}" wx:for="{{guideSteps}}" wx:key="index"></view>
+      </view>
+      <view class="guide-btns">
+        <view class="guide-btn guide-skip" bindtap="closeGuide">跳过</view>
+        <view class="guide-btn guide-next" bindtap="nextGuide">{{guideStep < guideSteps.length - 1 ? '下一步' : '开始游戏'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 玩法说明 -->
+  <view class="rules-overlay {{showRules ? 'show' : ''}}" catchtap="closeRules">
+    <view class="rules-card" catchtap="">
+      <text class="rules-title">📖 玩法说明</text>
+      <scroll-view class="rules-body" scroll-y>
+        <view wx:for="{{rulesSections}}" wx:key="title">
+          <text class="rules-section-title">{{item.title}}</text>
+          <text class="rules-section-text">{{item.text}}</text>
+        </view>
+      </scroll-view>
+      <view class="guide-btn guide-next" bindtap="closeRules">知道了</view>
+    </view>
+  </view>
+</view>

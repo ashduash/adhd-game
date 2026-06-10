@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>导出推广图</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a1a2e; display: flex; flex-direction: column; align-items: center; padding: 20px; font-family: sans-serif; min-height: 100vh; }
+    h2 { color: #ccc; margin: 20px 0 10px; }
+    .preview { border: 1px solid #444; border-radius: 8px; overflow: hidden; }
+    canvas { display: block; }
+    p { color: #888; margin: 12px 0; font-size: 14px; }
+    .buttons { display: flex; gap: 12px; margin-top: 8px; }
+    button { padding: 12px 28px; font-size: 16px; cursor: pointer; border: none; border-radius: 8px; color: white; }
+    .btn-png { background: #6C5CE7; }
+    .btn-png:hover { background: #5a4bd6; }
+    .info { color: #666; font-size: 12px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <h2>专注风暴 - 推广图预览</h2>
+  <div class="preview">
+    <canvas id="canvas" width="750" height="1334"></canvas>
+  </div>
+  <p>750×1334 竖版推广图</p>
+  <div class="buttons">
+    <button class="btn-png" onclick="download()">下载 PNG</button>
+  </div>
+  <p class="info">提示：下载后可用图片编辑工具在二维码位置添加小程序码</p>
+
+  <script>
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1334" viewBox="0 0 750 1334">
+      <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#1a0a3e"/>
+          <stop offset="40%" style="stop-color:#2d1b69"/>
+          <stop offset="70%" style="stop-color:#4a1a8a"/>
+          <stop offset="100%" style="stop-color:#6C5CE7"/>
+        </linearGradient>
+        <linearGradient id="card" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:rgba(255,255,255,0.12)"/>
+          <stop offset="100%" style="stop-color:rgba(255,255,255,0.04)"/>
+        </linearGradient>
+        <linearGradient id="brain" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#FF6B9D"/>
+          <stop offset="100%" style="stop-color:#C084FC"/>
+        </linearGradient>
+        <linearGradient id="storm" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#FFD700"/>
+          <stop offset="100%" style="stop-color:#FF8C00"/>
+        </linearGradient>
+        <linearGradient id="btn" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#FFD700"/>
+          <stop offset="100%" style="stop-color:#FF8C00"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="6" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="softglow">
+          <feGaussianBlur stdDeviation="20" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <rect width="750" height="1334" fill="url(#bg)"/>
+      <circle cx="375" cy="400" r="250" fill="#6C5CE7" opacity="0.15" filter="url(#softglow)"/>
+      <circle cx="150" cy="200" r="120" fill="#a855f7" opacity="0.08" filter="url(#softglow)"/>
+      <circle cx="600" cy="300" r="100" fill="#8B5CF6" opacity="0.08" filter="url(#softglow)"/>
+      <ellipse cx="120" cy="80" rx="60" ry="25" fill="white" opacity="0.06"/>
+      <ellipse cx="160" cy="70" rx="40" ry="18" fill="white" opacity="0.05"/>
+      <ellipse cx="620" cy="100" rx="50" ry="20" fill="white" opacity="0.06"/>
+      <ellipse cx="660" cy="90" rx="35" ry="15" fill="white" opacity="0.05"/>
+      <polygon points="80,130 72,160 79,160 68,185 88,155 80,155 90,130" fill="#FFD700" opacity="0.4"/>
+      <polygon points="670,150 663,175 669,175 659,198 676,170 669,170 678,150" fill="#FFD700" opacity="0.3"/>
+      <g transform="translate(275, 140)">
+        <path d="M50 62c0-14 9-26 21-29 4-14 16-23 30-23 17 0 31 13 32 29 9 4 15 13 15 23 0 9-4 17-11 22 2 4 4 8 4 13 0 11-8 20-17 22-2 11-12 19-24 19-9 0-16-4-21-11-4 4-10 6-16 6-12 0-22-9-24-20-9-3-15-11-15-20 0-7 3-13 9-17-2-5-4-10-4-16z" fill="url(#brain)" stroke="white" stroke-width="3" stroke-linejoin="round" opacity="0.9"/>
+        <path d="M100 36c-2 12-8 20-8 20" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+        <path d="M100 36c2 12 8 20 8 20" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+        <path d="M78 55c14 3 28 3 40 0" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+        <path d="M74 72c16 5 32 5 48 0" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <path d="M80 88c10-3 22-3 32 0" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+        <polygon points="112,20 90,70 104,70 78,125 130,62 112,62 132,20" fill="url(#storm)" stroke="white" stroke-width="2" stroke-linejoin="round" filter="url(#glow)"/>
+      </g>
+      <text x="375" y="380" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="72" font-weight="900" fill="white" letter-spacing="8">专注风暴</text>
+      <text x="375" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#C084FC" letter-spacing="6" opacity="0.8">FOCUS STORM</text>
+      <text x="375" y="475" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="30" fill="#FFD700" letter-spacing="3">科学训练 · 唤醒专注力</text>
+      <g transform="translate(55, 530)">
+        <rect width="640" height="130" rx="20" fill="url(#card)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <circle cx="65" cy="65" r="35" fill="rgba(108,92,231,0.3)"/>
+        <text x="65" y="78" text-anchor="middle" font-size="36">🧠</text>
+        <text x="120" y="50" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="26" font-weight="bold" fill="white">多种认知训练模式</text>
+        <text x="120" y="85" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="20" fill="rgba(255,255,255,0.6)">舒尔特方格 · 记忆翻牌 · 斯特鲁普 · 反应训练</text>
+      </g>
+      <g transform="translate(55, 680)">
+        <rect width="640" height="130" rx="20" fill="url(#card)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <circle cx="65" cy="65" r="35" fill="rgba(108,92,231,0.3)"/>
+        <text x="65" y="78" text-anchor="middle" font-size="36">⚡</text>
+        <text x="120" y="50" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="26" font-weight="bold" fill="white">ADHD 专属训练方案</text>
+        <text x="120" y="85" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="20" fill="rgba(255,255,255,0.6)">专注力 · 工作记忆 · 执行功能 · 冲动控制</text>
+      </g>
+      <g transform="translate(55, 830)">
+        <rect width="640" height="130" rx="20" fill="url(#card)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <circle cx="65" cy="65" r="35" fill="rgba(108,92,231,0.3)"/>
+        <text x="65" y="78" text-anchor="middle" font-size="36">📊</text>
+        <text x="120" y="50" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="26" font-weight="bold" fill="white">训练数据追踪</text>
+        <text x="120" y="85" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="20" fill="rgba(255,255,255,0.6)">排行榜竞技 · 成就系统 · 每日打卡 · 进步可视化</text>
+      </g>
+      <g transform="translate(0, 1000)">
+        <line x1="100" y1="0" x2="650" y2="0" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <g transform="translate(125, 30)">
+          <text x="50" y="0" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="900" fill="#FFD700">8+</text>
+          <text x="50" y="30" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="18" fill="rgba(255,255,255,0.6)">训练项目</text>
+        </g>
+        <g transform="translate(325, 30)">
+          <text x="50" y="0" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="900" fill="#FFD700">5</text>
+          <text x="50" y="30" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="18" fill="rgba(255,255,255,0.6)">分钟/天</text>
+        </g>
+        <g transform="translate(525, 30)">
+          <text x="50" y="0" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="900" fill="#FFD700">∞</text>
+          <text x="50" y="30" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="18" fill="rgba(255,255,255,0.6)">免费畅玩</text>
+        </g>
+      </g>
+      <g transform="translate(175, 1140)">
+        <rect width="400" height="75" rx="38" fill="url(#btn)" filter="url(#glow)"/>
+        <text x="200" y="48" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="bold" fill="#1a0a3e" letter-spacing="4">立即体验</text>
+      </g>
+      <text x="375" y="1270" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="20" fill="rgba(255,255,255,0.4)">微信扫码 · 开启专注力训练之旅</text>
+      <rect x="315" y="1278" width="60" height="60" rx="8" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="345" y="1315" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="14" fill="rgba(255,255,255,0.25)">二维码</text>
+      <path d="M50 1310 Q200 1295 375 1300 Q550 1305 700 1290" fill="none" stroke="white" stroke-width="1.5" opacity="0.06"/>
+      <path d="M80 1325 Q250 1312 375 1315 Q500 1318 670 1308" fill="none" stroke="white" stroke-width="1" opacity="0.04"/>
+    </svg>`;
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, 750, 1334);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+
+    function download() {
+      const a = document.createElement('a');
+      a.download = 'focus-storm-poster-750x1334.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    }
+  </script>
+</body>
+</html>

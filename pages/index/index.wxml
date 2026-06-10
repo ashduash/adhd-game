@@ -1,0 +1,149 @@
+<view class="page {{show ? 'show' : ''}}">
+
+  <!-- 登录遮罩 -->
+  <view class="login-overlay" wx:if="{{needsLogin}}">
+    <view class="login-card">
+      <text class="login-icon">🎮</text>
+      <text class="login-title">专注风暴</text>
+      <text class="login-desc">请使用微信登录后开始游戏</text>
+      <button class="login-btn" bindtap="wxLogin" loading="{{loginLoading}}" disabled="{{loginLoading}}">
+        {{loginLoading ? '登录中...' : '微信一键登录'}}
+      </button>
+      <text class="login-error" wx:if="{{loginError}}">{{loginError}}</text>
+    </view>
+  </view>
+
+  <!-- 顶部标题 -->
+  <view class="header animate-item">
+    <view class="title-row">
+      <text class="title">专注风暴</text>
+      <text class="subtitle">思维挑战游戏</text>
+    </view>
+    <view class="rank-badge" bindtap="viewRank">
+      <text class="rank-icon">{{rankInfo.icon}}</text>
+      <text class="rank-name rank-{{rankInfo.key}}">{{rankInfo.name}}</text>
+    </view>
+  </view>
+
+  <!-- 段位卡片 -->
+  <view class="rank-card card animate-item" bindtap="viewRank">
+    <view class="rank-card-header">
+      <view class="rank-info">
+        <text class="rank-label">当前段位</text>
+        <view class="rank-display">
+          <text class="rank-big-icon">{{rankInfo.icon}}</text>
+          <text class="rank-big-name" style="color: {{rankInfo.color}}">{{rankInfo.name}}</text>
+        </view>
+      </view>
+      <view class="rank-points">
+        <text class="points-value">{{rankPoints}}</text>
+        <text class="points-label">积分</text>
+      </view>
+    </view>
+
+    <view class="rank-progress-bar">
+      <view class="progress-track">
+        <view class="progress-fill" style="width: {{rankProgress * 100}}%; background: {{rankInfo.color}}"></view>
+      </view>
+      <view class="progress-info" wx:if="{{nextRank}}">
+        <text class="progress-text">距离{{nextRank.name}}</text>
+        <text class="progress-points">还需{{pointsNeeded}}分</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 连续打卡 -->
+  <view class="streak-card animate-item" wx:if="{{streak > 0}}">
+    <text class="streak-fire">🔥</text>
+    <text class="streak-text">连续打卡 <text class="streak-num">{{streak}}</text> 天</text>
+    <text class="streak-freeze-count" wx:if="{{streakFreeze > 0}}">🧊 {{streakFreeze}}</text>
+  </view>
+
+  <!-- 补签卡 -->
+  <view class="freeze-card animate-item" wx:if="{{canFreeze || streakFreeze > 0}}">
+    <view class="freeze-info" wx:if="{{canFreeze && streakFreeze > 0}}">
+      <text class="freeze-text">断签了！使用补签卡恢复连续打卡</text>
+      <button class="freeze-btn use" bindtap="useStreakFreeze">使用补签卡</button>
+    </view>
+    <view class="freeze-info" wx:elif="{{canFreeze}}">
+      <text class="freeze-text">断签了！看视频领取补签卡</text>
+    </view>
+    <view class="freeze-info" wx:else>
+      <text class="freeze-text">补签卡 x{{streakFreeze}} · 看视频再领一张</text>
+    </view>
+    <button class="freeze-btn watch" bindtap="watchAdForFreeze">📺 看视频领补签卡</button>
+  </view>
+
+  <!-- 每日挑战 -->
+  <view class="daily-card animate-item" bindtap="startDailyChallenge" wx:if="{{dailyChallenge}}">
+    <view class="daily-badge">每日挑战</view>
+    <view class="daily-content">
+      <view class="daily-info">
+        <text class="daily-title">{{dailyChallenge.title}}</text>
+        <text class="daily-target">目标: {{dailyChallenge.target}}</text>
+        <text class="daily-participants">{{dailyChallenge.participants}}人已参与</text>
+      </view>
+      <view class="daily-arrow">
+        <text class="arrow-icon">→</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 训练计划入口 -->
+  <view class="training-card animate-item" bindtap="startTraining">
+    <view class="training-icon">📋</view>
+    <view class="training-info">
+      <text class="training-title">每日训练计划</text>
+      <text class="training-desc">5天周期 · 每日3关 · 科学训练</text>
+    </view>
+    <view class="training-arrow"><text>→</text></view>
+  </view>
+
+  <!-- 玩法列表 -->
+  <view class="section-title animate-item">
+    <text class="section-text">挑战模式</text>
+  </view>
+
+  <view class="modes-list">
+    <view
+      class="mode-card card animate-item"
+      wx:for="{{modes}}"
+      wx:key="id"
+      bindtap="startMode"
+      data-mode="{{item.id}}"
+      style="--delay: {{index * 0.1}}s"
+    >
+      <view class="mode-icon-wrapper" style="background: {{item.gradient}}">
+        <text class="mode-icon">{{item.icon}}</text>
+      </view>
+      <view class="mode-info">
+        <text class="mode-name">{{item.name}}</text>
+        <text class="mode-desc">{{item.desc}}</text>
+      </view>
+      <view class="mode-arrow">
+        <text>→</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 统计信息 -->
+  <view class="stats-row animate-item">
+    <view class="stat-item card-glass">
+      <text class="stat-value">{{totalGames}}</text>
+      <text class="stat-label">总局数</text>
+    </view>
+    <view class="stat-item card-glass">
+      <text class="stat-value">{{bestScores.schulte[4] || '--'}}</text>
+      <text class="stat-label">最佳4×4</text>
+    </view>
+    <view class="stat-item card-glass">
+      <text class="stat-value">{{bestScores.memory[6] || '--'}}</text>
+      <text class="stat-label">最佳记忆</text>
+    </view>
+  </view>
+
+  <!-- Banner 广告 -->
+  <view class="ad-container">
+    <ad unit-id="{{bannerAdId}}" ad-type="banner" ad-theme="white" binderror="onAdError"></ad>
+  </view>
+</view>

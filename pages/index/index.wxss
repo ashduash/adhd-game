@@ -1,0 +1,482 @@
+/* 页面进入动画 */
+.page {
+  opacity: 0;
+  padding: 24rpx 32rpx 160rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.page.show {
+  opacity: 1;
+}
+
+.animate-item {
+  opacity: 0;
+  transform: translateY(30rpx);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.page.show .animate-item {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page.show .animate-item:nth-child(1) { transition-delay: 0.05s; }
+.page.show .animate-item:nth-child(2) { transition-delay: 0.1s; }
+.page.show .animate-item:nth-child(3) { transition-delay: 0.15s; }
+.page.show .animate-item:nth-child(4) { transition-delay: 0.2s; }
+.page.show .animate-item:nth-child(5) { transition-delay: 0.25s; }
+.page.show .animate-item:nth-child(6) { transition-delay: 0.3s; }
+.page.show .animate-item:nth-child(7) { transition-delay: 0.35s; }
+.page.show .animate-item:nth-child(8) { transition-delay: 0.4s; }
+
+/* 顶部标题 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32rpx;
+  padding: 16rpx 0;
+}
+
+.title-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 48rpx;
+  font-weight: 700;
+  background: linear-gradient(135deg, #C07A45 0%, #D4A574 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4rpx;
+}
+
+.rank-badge {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12rpx 24rpx;
+  border-radius: 32rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.15);
+}
+
+.rank-icon {
+  font-size: 28rpx;
+}
+
+.rank-name {
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+/* 段位卡片 */
+.rank-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.rank-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24rpx;
+}
+
+.rank-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.rank-label {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8rpx;
+}
+
+.rank-display {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.rank-big-icon {
+  font-size: 48rpx;
+}
+
+.rank-big-name {
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.rank-points {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.points-value {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #FFD700;
+}
+
+.points-label {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 进度条 */
+.rank-progress-bar {
+  margin-top: 8rpx;
+}
+
+.progress-track {
+  height: 12rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6rpx;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 6rpx;
+  transition: width 0.6s ease;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12rpx;
+}
+
+.progress-text,
+.progress-points {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 每日挑战 */
+.daily-card {
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.3) 0%, rgba(0, 210, 255, 0.2) 100%);
+  border-radius: 24rpx;
+  padding: 28rpx 32rpx;
+  margin-bottom: 32rpx;
+  border: 1rpx solid rgba(108, 92, 231, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.daily-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #1a1a2e;
+  font-size: 20rpx;
+  font-weight: 700;
+  padding: 6rpx 20rpx;
+  border-radius: 0 24rpx 0 16rpx;
+}
+
+.daily-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.daily-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.daily-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.daily-target {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.daily-participants {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.daily-arrow {
+  width: 56rpx;
+  height: 56rpx;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arrow-icon {
+  font-size: 28rpx;
+  color: #ffffff;
+}
+
+/* 区域标题 */
+.section-title {
+  margin-bottom: 20rpx;
+  padding: 0 4rpx;
+}
+
+.section-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 玩法列表 */
+.modes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-bottom: 32rpx;
+}
+
+.mode-card {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 28rpx 32rpx;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.mode-card:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mode-icon-wrapper {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mode-icon {
+  font-size: 40rpx;
+}
+
+.mode-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.mode-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.mode-desc {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.mode-arrow {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* 连续打卡 */
+.streak-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 20rpx 32rpx;
+  margin-bottom: 24rpx;
+  background: linear-gradient(135deg, rgba(255,107,107,0.15) 0%, rgba(255,165,0,0.15) 100%);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(255,107,107,0.2);
+}
+
+.streak-fire { font-size: 32rpx; }
+.streak-text { font-size: 26rpx; color: rgba(255,255,255,0.8); }
+.streak-num { font-size: 32rpx; font-weight: 800; color: #FF6B6B; }
+.streak-freeze-count { font-size: 24rpx; color: rgba(255,255,255,0.6); margin-left: auto; }
+
+/* 补签卡 */
+.freeze-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  padding: 24rpx 28rpx;
+  margin-bottom: 24rpx;
+  background: rgba(0, 210, 255, 0.08);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(0, 210, 255, 0.15);
+}
+
+.freeze-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.freeze-text {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.freeze-btn {
+  height: 72rpx;
+  border-radius: 16rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.freeze-btn.watch {
+  background: linear-gradient(135deg, #00CEC9 0%, #00D2FF 100%);
+  color: #ffffff;
+}
+
+.freeze-btn.use {
+  background: linear-gradient(135deg, #C07A45 0%, #D4A574 100%);
+  color: #ffffff;
+}
+
+/* Banner 广告 */
+.ad-container {
+  margin-top: 24rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+/* 训练计划入口 */
+.training-card {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 28rpx 32rpx;
+  margin-bottom: 32rpx;
+  background: linear-gradient(135deg, rgba(192,122,69,0.12) 0%, rgba(212,165,116,0.08) 100%);
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(192,122,69,0.18);
+  transition: transform 0.2s ease;
+}
+
+.training-card:active { transform: scale(0.98); }
+.training-icon { font-size: 48rpx; }
+.training-info { flex: 1; }
+.training-title { font-size: 30rpx; font-weight: 700; color: #ffffff; display: block; margin-bottom: 4rpx; }
+.training-desc { font-size: 22rpx; color: rgba(255,255,255,0.5); }
+.training-arrow { font-size: 28rpx; color: rgba(255,255,255,0.3); }
+
+/* 统计信息 */
+.stats-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 24rpx 16rpx;
+}
+
+.stat-value {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.stat-label {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 登录遮罩 */
+.login-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  width: 82%;
+  background: rgba(30, 30, 50, 0.98);
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  padding: 60rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login-icon {
+  font-size: 100rpx;
+  margin-bottom: 20rpx;
+}
+
+.login-title {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 16rpx;
+}
+
+.login-desc {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 60rpx;
+}
+
+.login-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: linear-gradient(135deg, #C07A45 0%, #D4A574 100%);
+  border-radius: 16rpx;
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 600;
+  border: none;
+}
+
+.login-btn::after {
+  border: none;
+}
+
+.login-error {
+  font-size: 24rpx;
+  color: #FF6B6B;
+  margin-top: 24rpx;
+}

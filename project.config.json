@@ -1,0 +1,124 @@
+{
+  "description": "专注风暴 - 思维挑战游戏",
+  "minigameRoot": "./",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "pages"
+      },
+      {
+        "type": "folder",
+        "value": "components"
+      },
+      {
+        "type": "folder",
+        "value": "cloudfunctions"
+      },
+      {
+        "type": "folder",
+        "value": "server"
+      },
+      {
+        "type": "folder",
+        "value": "utils"
+      },
+      {
+        "type": "file",
+        "value": "app.miniprogram.js"
+      },
+      {
+        "type": "file",
+        "value": "app.miniprogram.json"
+      },
+      {
+        "type": "file",
+        "value": "app.miniprogram.wxss"
+      },
+      {
+        "type": "file",
+        "value": "sitemap.miniprogram.json"
+      },
+      {
+        "type": "file",
+        "value": "备案系统说明.md"
+      },
+      {
+        "type": "file",
+        "value": "截图清单.md"
+      },
+      {
+        "type": "file",
+        "value": "test-content-security.js"
+      },
+      {
+        "type": "file",
+        "value": "CLAUDE.md"
+      },
+      {
+        "type": "file",
+        "value": "内容安全API接入检查清单.md"
+      },
+      {
+        "type": "file",
+        "value": "验证报告.md"
+      }
+    ],
+    "include": []
+  },
+  "setting": {
+    "bundle": false,
+    "userConfirmedBundleSwitch": false,
+    "urlCheck": false,
+    "scopeDataCheck": true,
+    "coverView": true,
+    "es6": true,
+    "postcss": true,
+    "compileHotReLoad": false,
+    "lazyloadPlaceholderEnable": false,
+    "preloadBackgroundData": false,
+    "minified": true,
+    "autoAudits": true,
+    "newFeature": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "useIsolateContext": true,
+    "nodeModules": false,
+    "enhance": true,
+    "useMultiFrameRuntime": true,
+    "useApiHook": true,
+    "useApiHostProcess": true,
+    "showShadowRootInWxmlPanel": true,
+    "packNpmManually": false,
+    "enableEngineNative": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "showES6CompileOption": false,
+    "minifyWXML": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    },
+    "compileWorklet": false,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true
+  },
+  "compileType": "game",
+  "libVersion": "3.16.1",
+  "appid": "wx16490bb8f5ee8ba1",
+  "projectname": "focus-storm",
+  "condition": {},
+  "editorSetting": {
+    "tabIndent": "insertSpaces",
+    "tabSize": 2
+  },
+  "simulatorPluginLibVersion": {},
+  "isGameTourist": false,
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/"
+}

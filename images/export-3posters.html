@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>专注风暴 - 三张推广图</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a1a; display: flex; flex-direction: column; align-items: center; padding: 20px; font-family: sans-serif; }
+    h2 { color: #aaa; margin: 20px 0 5px; font-size: 18px; }
+    .size-info { color: #666; font-size: 12px; margin-bottom: 10px; }
+    .poster-wrap { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; }
+    .poster-item { display: flex; flex-direction: column; align-items: center; }
+    .preview { border: 1px solid #333; border-radius: 6px; overflow: hidden; }
+    canvas { display: block; }
+    button { margin-top: 10px; padding: 10px 24px; font-size: 14px; cursor: pointer; border: none; border-radius: 6px; background: #6C5CE7; color: white; }
+    button:hover { background: #5a4bd6; }
+    .tip { color: #555; font-size: 11px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <h2>专注风暴 - 推广图导出（720×1280）</h2>
+  <p class="size-info">格式 PNG / JPEG，每张 ≤ 200KB</p>
+
+  <div class="poster-wrap">
+    <div class="poster-item">
+      <p style="color:#aaa;margin-bottom:8px">图1 / 3 - 品牌主图</p>
+      <div class="preview"><canvas id="c1" width="720" height="1280"></canvas></div>
+      <button onclick="dl('c1','专注风暴-推广图1.png')">下载 PNG</button>
+      <button onclick="dlJpg('c1','专注风暴-推广图1.jpg')" style="background:#444;margin-top:6px">下载 JPEG（更小）</button>
+      <p class="tip" id="s1"></p>
+    </div>
+    <div class="poster-item">
+      <p style="color:#aaa;margin-bottom:8px">图2 / 3 - 训练模式</p>
+      <div class="preview"><canvas id="c2" width="720" height="1280"></canvas></div>
+      <button onclick="dl('c2','专注风暴-推广图2.png')">下载 PNG</button>
+      <button onclick="dlJpg('c2','专注风暴-推广图2.jpg')" style="background:#444;margin-top:6px">下载 JPEG（更小）</button>
+      <p class="tip" id="s2"></p>
+    </div>
+    <div class="poster-item">
+      <p style="color:#aaa;margin-bottom:8px">图3 / 3 - ADHD 训练</p>
+      <div class="preview"><canvas id="c3" width="720" height="1280"></canvas></div>
+      <button onclick="dl('c3','专注风暴-推广图3.png')">下载 PNG</button>
+      <button onclick="dlJpg('c3','专注风暴-推广图3.jpg')" style="background:#444;margin-top:6px">下载 JPEG（更小）</button>
+      <p class="tip" id="s3"></p>
+    </div>
+  </div>
+
+  <script>
+    // ========== 通用绘制工具 ==========
+    function drawBg(ctx, c1, c2, c3) {
+      const g = ctx.createLinearGradient(0, 0, 0, 1280);
+      g.addColorStop(0, c1); g.addColorStop(0.5, c2); g.addColorStop(1, c3);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, 720, 1280);
+    }
+    function drawCircleGlow(ctx, x, y, r, color, alpha) {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, color.replace(')', ',' + alpha + ')').replace('rgb', 'rgba'));
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+    }
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath(); ctx.moveTo(x+r,y);
+      ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+      ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+      ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+      ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+    }
+    function drawCard(ctx, x, y, w, h) {
+      roundRect(ctx, x, y, w, h, 16);
+      ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+    function drawBrainIcon(ctx, cx, cy, scale) {
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(scale, scale);
+      // 大脑轮廓
+      ctx.beginPath();
+      ctx.moveTo(-22, 8);
+      ctx.bezierCurveTo(-22,-12,-9,-28,0,-30);
+      ctx.bezierCurveTo(8,-32,22,-24,24,-10);
+      ctx.bezierCurveTo(28,-4,30,4,30,10);
+      ctx.bezierCurveTo(30,18,24,24,18,26);
+      ctx.bezierCurveTo(14,32,6,34,0,34);
+      ctx.bezierCurveTo(-8,34,-16,28,-20,22);
+      ctx.bezierCurveTo(-26,18,-28,12,-28,6);
+      ctx.bezierCurveTo(-28,0,-26,-4,-22,-6);
+      ctx.bezierCurveTo(-24,-12,-22,-18,-16,-22);
+      ctx.bezierCurveTo(-10,-26,-2,-28,0,-30);
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,107,157,0.5)'; ctx.fill();
+      // 纹路
+      ctx.beginPath(); ctx.moveTo(0,-22); ctx.lineTo(-6,0); ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=2; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,-22); ctx.lineTo(6,0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-16,2); ctx.bezierCurveTo(-6,6,6,6,16,2); ctx.stroke();
+      // 闪电
+      ctx.beginPath();
+      ctx.moveTo(8,-20); ctx.lineTo(-2,8); ctx.lineTo(4,8); ctx.lineTo(-8,32);
+      ctx.lineTo(14,4); ctx.lineTo(8,4); ctx.lineTo(16,-20);
+      ctx.closePath();
+      ctx.fillStyle = '#FFD700'; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.restore();
+    }
+    function drawTitle(ctx, y, title, sub) {
+      ctx.fillStyle = 'white'; ctx.font = 'bold 56px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.textAlign = 'center'; ctx.fillText(title, 360, y);
+      ctx.font = '18px Arial,sans-serif'; ctx.fillStyle = '#C084FC'; ctx.letterSpacing = '4px';
+      ctx.fillText(sub, 360, y + 36);
+    }
+    function drawSlogan(ctx, y, text) {
+      ctx.font = 'bold 24px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.fillStyle = '#FFD700'; ctx.textAlign = 'center'; ctx.fillText(text, 360, y);
+    }
+    function drawBtn(ctx, y, text) {
+      roundRect(ctx, 180, y, 360, 64, 32);
+      const g = ctx.createLinearGradient(180, y, 540, y);
+      g.addColorStop(0, '#FFD700'); g.addColorStop(1, '#FF8C00');
+      ctx.fillStyle = g; ctx.fill();
+      ctx.fillStyle = '#1a0a3e'; ctx.font = 'bold 26px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.textAlign = 'center'; ctx.fillText(text, 360, y + 42);
+    }
+    function drawQRHint(ctx, y) {
+      ctx.font = '16px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.textAlign = 'center';
+      ctx.fillText('微信扫码 · 开启专注力训练之旅', 360, y);
+      roundRect(ctx, 320, y+12, 80, 80, 8);
+      ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.font = '13px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.fillText('小程序码', 360, y+58);
+    }
+    function drawDecorLines(ctx) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(40,1240); ctx.quadraticCurveTo(360,1225,680,1240); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(60,1258); ctx.quadraticCurveTo(360,1245,660,1258); ctx.stroke();
+    }
+    function drawStars(ctx, stars) {
+      stars.forEach(function(s){
+        ctx.fillStyle = 'rgba(255,255,255,' + s[2] + ')';
+        ctx.beginPath(); ctx.arc(s[0], s[1], s[3], 0, Math.PI*2); ctx.fill();
+      });
+    }
+
+    // ========== 海报1：品牌主图 ==========
+    function drawPoster1() {
+      var c = document.getElementById('c1'), ctx = c.getContext('2d');
+      drawBg(ctx, '#1a0a3e', '#2d1b69', '#6C5CE7');
+      drawCircleGlow(ctx, 360, 380, 220, 'rgb(108,92,231)', 0.12);
+      drawCircleGlow(ctx, 140, 180, 100, 'rgb(168,85,247)', 0.06);
+      drawStars(ctx, [[80,120,0.6,2],[640,90,0.5,1.8],[60,600,0.3,1.5],[660,700,0.4,1.5],[100,900,0.3,1.2]]);
+      drawBrainIcon(ctx, 360, 260, 2.8);
+      drawTitle(ctx, 440, '专注风暴', 'FOCUS STORM');
+      drawSlogan(ctx, 510, '科学训练 · 唤醒专注力');
+
+      // 三张核心卡片
+      var items = [
+        ['🧠','多种认知训练','舒尔特方格 · 记忆翻牌 · 反应训练'],
+        ['⚡','ADHD 专属方案','专注力 · 工作记忆 · 执行功能'],
+        ['📊','数据追踪成长','排行榜 · 成就系统 · 每日打卡']
+      ];
+      items.forEach(function(it, i){
+        var y = 560 + i * 140;
+        drawCard(ctx, 60, y, 600, 120);
+        ctx.font = '36px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(it[0], 110, y+68);
+        ctx.font = 'bold 24px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.fillStyle = 'white'; ctx.textAlign = 'left'; ctx.fillText(it[1], 160, y+52);
+        ctx.font = '17px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillText(it[2], 160, y+85);
+      });
+
+      // 数据
+      ctx.font = 'bold 36px Arial,sans-serif'; ctx.fillStyle = '#FFD700'; ctx.textAlign = 'center';
+      ctx.fillText('8+', 180, 1020); ctx.fillText('5min', 360, 1020); ctx.fillText('∞', 540, 1020);
+      ctx.font = '16px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fillText('训练项目', 180, 1050); ctx.fillText('每天训练', 360, 1050); ctx.fillText('免费畅玩', 540, 1050);
+
+      drawBtn(ctx, 1090, '立即体验');
+      drawQRHint(ctx, 1180);
+      drawDecorLines(ctx);
+    }
+
+    // ========== 海报2：训练模式 ==========
+    function drawPoster2() {
+      var c = document.getElementById('c2'), ctx = c.getContext('2d');
+      drawBg(ctx, '#0f0a2e', '#1a1050', '#4a1a8a');
+      drawCircleGlow(ctx, 360, 300, 200, 'rgb(108,92,231)', 0.1);
+      drawStars(ctx, [[100,100,0.5,2],[620,150,0.4,1.5],[70,800,0.3,1.2],[650,900,0.3,1.2]]);
+
+      ctx.fillStyle = 'white'; ctx.font = 'bold 48px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('8大训练模式', 360, 120);
+      ctx.font = '20px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.fillStyle = '#C084FC';
+      ctx.fillText('全方位锻炼你的大脑', 360, 160);
+
+      var games = [
+        ['🎯','舒尔特方格','训练视觉搜索与注意力广度', '#FF6B9D'],
+        ['🃏','记忆翻牌','提升工作记忆与空间记忆', '#C084FC'],
+        ['🌈','斯特鲁普','锻炼认知灵活性与抗干扰', '#6C5CE7'],
+        ['⚡','反应速度','提高反应时间与警觉性', '#FFD700'],
+        ['🔢','数字排序','强化工作记忆与排序能力', '#4ECDC4'],
+        ['🔍','视觉扫描','训练视觉注意力与扫描效率', '#FF8C00'],
+        ['🧩','双任务训练','提升多任务处理与分配注意', '#45B7D1'],
+        ['🎮','颜色匹配','锻炼抑制控制与决策速度', '#96CEB4']
+      ];
+
+      games.forEach(function(g, i){
+        var col = i % 2, row = Math.floor(i / 2);
+        var x = 45 + col * 330, y = 210 + row * 230;
+        drawCard(ctx, x, y, 305, 200);
+        // 彩色顶条
+        roundRect(ctx, x, y, 305, 5, 0);
+        ctx.fillStyle = g[3]; ctx.fill();
+        // 图标
+        ctx.font = '42px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(g[0], x+152, y+70);
+        // 名称
+        ctx.font = 'bold 22px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.fillStyle = 'white';
+        ctx.fillText(g[1], x+152, y+115);
+        // 描述
+        ctx.font = '15px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillText(g[2], x+152, y+150);
+      });
+
+      drawBtn(ctx, 1160, '开始训练');
+      drawQRHint(ctx, 1240);
+    }
+
+    // ========== 海报3：ADHD 训练 ==========
+    function drawPoster3() {
+      var c = document.getElementById('c3'), ctx = c.getContext('2d');
+      drawBg(ctx, '#0a0f2e', '#1a1050', '#2d1b69');
+      drawCircleGlow(ctx, 360, 350, 250, 'rgb(108,92,231)', 0.1);
+      drawCircleGlow(ctx, 200, 150, 100, 'rgb(255,107,157)', 0.05);
+      drawStars(ctx, [[90,110,0.6,2],[630,80,0.5,1.8],[650,500,0.3,1.5],[80,700,0.3,1.2]]);
+
+      drawBrainIcon(ctx, 360, 200, 2.2);
+
+      ctx.fillStyle = 'white'; ctx.font = 'bold 48px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('ADHD 认知训练', 360, 370);
+      ctx.font = '20px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.fillStyle = '#C084FC';
+      ctx.fillText('科学方法 · 系统训练 · 持续提升', 360, 410);
+
+      drawSlogan(ctx, 460, '注意力缺陷多动障碍人群专属');
+
+      // 训练维度卡片
+      var dims = [
+        ['🎯','专注力','延长注意力持续时间','提升抗干扰能力'],
+        ['🧠','工作记忆','增强短期信息存储','改善多步任务执行'],
+        ['⚡','执行功能','提高计划与组织能力','增强目标导向行为'],
+        ['🛑','冲动控制','训练抑制冲动反应','改善决策与自控力']
+      ];
+
+      dims.forEach(function(d, i){
+        var y = 510 + i * 130;
+        drawCard(ctx, 60, y, 600, 110);
+        ctx.font = '38px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(d[0], 120, y+65);
+        ctx.font = 'bold 24px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.fillStyle = 'white'; ctx.textAlign = 'left';
+        ctx.fillText(d[1], 180, y+48);
+        ctx.font = '16px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.fillText(d[2], 180, y+78);
+        ctx.fillText(d[3], 180, y+100);
+      });
+
+      // 底部信息
+      ctx.font = '18px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.textAlign = 'center';
+      ctx.fillText('每天5分钟 · 循序渐进 · 可视化进步', 360, 1050);
+
+      drawBtn(ctx, 1090, '开启训练');
+      drawQRHint(ctx, 1180);
+      drawDecorLines(ctx);
+    }
+
+    // ========== 绘制全部 ==========
+    drawPoster1(); drawPoster2(); drawPoster3();
+
+    // 显示文件大小
+    ['c1','c2','c3'].forEach(function(id, i){
+      document.getElementById(id).toBlob(function(blob){
+        var kb = (blob.size / 1024).toFixed(1);
+        document.getElementById('s'+(i+1)).textContent = 'PNG: ' + kb + ' KB' + (blob.size > 204800 ? ' (超过200KB，请用JPEG)' : ' ✓');
+      }, 'image/png');
+    });
+
+    function dl(id, name) {
+      var a = document.createElement('a');
+      a.download = name;
+      a.href = document.getElementById(id).toDataURL('image/png');
+      a.click();
+    }
+    function dlJpg(id, name) {
+      var a = document.createElement('a');
+      a.download = name;
+      a.href = document.getElementById(id).toDataURL('image/jpeg', 0.85);
+      a.click();
+    }
+  </script>
+</body>
+</html>

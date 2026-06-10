@@ -1,0 +1,9 @@
+{
+  "triggers": [
+    {
+      "name": "dailyContentAudit",
+      "type": "timer",
+      "config": "0 3 * * * * *"
+    }
+  ]
+}

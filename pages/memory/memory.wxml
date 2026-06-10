@@ -1,0 +1,301 @@
+<view class="page {{show ? 'show' : ''}}" style="background: {{currentSkin.background}}">
+  <!-- 顶部导航 -->
+  <view class="nav-bar">
+    <view class="nav-back" bindtap="goHome">
+      <text class="back-icon">←</text>
+    </view>
+    <view class="nav-title">
+      <text class="title-text">记忆还原</text>
+      <text class="title-sub">{{level}}位数字</text>
+    </view>
+    <view class="nav-placeholder"></view>
+  </view>
+
+  <!-- 准备状态 -->
+  <view class="ready-screen" wx:if="{{gameState === 'ready'}}">
+    <view class="ready-content animate-scale-in">
+      <view class="ready-icon">🧠</view>
+      <text class="ready-title">{{level}}位记忆还原</text>
+      <text class="ready-desc">记住数字序列，然后还原它</text>
+      <text class="ready-tip">展示时间: {{showTimer}}秒</text>
+
+      <!-- 难度选择 -->
+      <view class="level-selector">
+        <view
+          class="level-btn {{level === item ? 'active' : ''}}"
+          wx:for="{{[4, 5, 6, 7, 8, 9, 10]}}"
+          wx:key="*this"
+          bindtap="selectLevel"
+          data-level="{{item}}"
+          style="{{level === item ? 'border-color:' + currentSkin.accent + ';background:' + currentSkin.accent + '30' : ''}}"
+        >{{item}}位</view>
+      </view>
+
+      <button class="btn-primary start-btn" bindtap="startGame" style="background: linear-gradient(135deg, {{currentSkin.accent}} 0%, {{currentSkin.accent}}88 100%)">
+        开始挑战
+      </button>
+      <view class="rules-link" bindtap="openRules">📖 玩法说明</view>
+    </view>
+  </view>
+
+  <!-- 展示状态 -->
+  <view class="show-screen" wx:if="{{gameState === 'showing'}}">
+    <view class="show-content">
+      <text class="show-hint">记住这些数字</text>
+
+      <view class="sequence-display">
+        <view
+          class="seq-num {{index <= showIndex ? 'visible' : 'hidden'}}"
+          wx:for="{{sequence}}"
+          wx:key="index"
+          style="
+            background: {{index <= showIndex ? currentSkin.cell.activeBg : currentSkin.cell.bg}};
+            border-color: {{index <= showIndex ? currentSkin.cell.activeBorder : currentSkin.cell.border}};
+          "
+        >
+          <text class="num-text" style="color: {{currentSkin.cell.text}}">{{item}}</text>
+        </view>
+      </view>
+
+      <view class="show-progress">
+        <view class="progress-bar">
+          <view class="progress-fill" style="width: {{(showIndex + 1) / level * 100}}%; background: {{currentSkin.accent}}"></view>
+        </view>
+        <text class="progress-text">{{showIndex + 1}} / {{level}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 输入状态 -->
+  <view class="input-screen" wx:if="{{gameState === 'input'}}">
+    <view class="input-content">
+      <!-- 计时器 -->
+      <view class="input-timer">
+        <text class="timer-label">用时</text>
+        <text class="timer-value">{{inputTime}}</text>
+      </view>
+
+      <!-- 输入序列 - 每个数字分十位和个位两个子框 -->
+      <view class="input-sequence">
+        <view
+          class="input-slot {{index < slotCorrect.length ? (slotCorrect[index] ? 'correct' : 'wrong') : ''}} {{index === currentSlotIndex && index >= slotCorrect.length ? 'current' : ''}}"
+          wx:for="{{level}}"
+          wx:key="*this"
+        >
+          <!-- 十位 -->
+          <view
+            class="digit-box {{index < slotCorrect.length ? 'filled' : ''}} {{index === currentSlotIndex && currentDigitIndex === 0 ? 'active' : ''}}"
+            style="
+              background: {{index < slotCorrect.length ? (slotCorrect[index] ? 'rgba(0,184,148,0.2)' : 'rgba(255,107,107,0.2)') : (index === currentSlotIndex && currentDigitIndex === 0 ? currentSkin.accent + '30' : currentSkin.cell.bg)}};
+              border-color: {{index < slotCorrect.length ? (slotCorrect[index] ? '#00B894' : '#FF6B6B') : (index === currentSlotIndex && currentDigitIndex === 0 ? currentSkin.accent : currentSkin.cell.border)}};
+            "
+          >
+            <text class="digit-text" style="color: {{index < slotCorrect.length ? (slotCorrect[index] ? '#00B894' : '#FF6B6B') : currentSkin.cell.text}}">{{displayDigits[index * 2] >= 0 ? displayDigits[index * 2] : ''}}</text>
+          </view>
+          <!-- 个位 -->
+          <view
+            class="digit-box {{index < slotCorrect.length ? 'filled' : ''}} {{index === currentSlotIndex && currentDigitIndex === 1 ? 'active' : ''}}"
+            style="
+              background: {{index < slotCorrect.length ? (slotCorrect[index] ? 'rgba(0,184,148,0.2)' : 'rgba(255,107,107,0.2)') : (index === currentSlotIndex && currentDigitIndex === 1 ? currentSkin.accent + '30' : currentSkin.cell.bg)}};
+              border-color: {{index < slotCorrect.length ? (slotCorrect[index] ? '#00B894' : '#FF6B6B') : (index === currentSlotIndex && currentDigitIndex === 1 ? currentSkin.accent : currentSkin.cell.border)}};
+            "
+          >
+            <text class="digit-text" style="color: {{index < slotCorrect.length ? (slotCorrect[index] ? '#00B894' : '#FF6B6B') : currentSkin.cell.text}}">{{displayDigits[index * 2 + 1] >= 0 ? displayDigits[index * 2 + 1] : ''}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 提示 -->
+      <view class="target-hint">
+        <text class="hint-text">逐位输入你记住的数字</text>
+      </view>
+
+      <!-- 数字键盘 -->
+      <view class="number-pad">
+        <view class="pad-row">
+          <view
+            class="pad-btn {{tappedKey === 1 ? 'tapping ' + tappedType : ''}}"
+            bindtap="onDigitTap"
+            data-num="1"
+            style="background: {{tappedKey === 1 ? (tappedType === 'success' ? currentSkin.cell.successBg : 'rgba(255,107,107,0.2)') : currentSkin.cell.bg}}; border-color: {{tappedKey === 1 ? (tappedType === 'success' ? currentSkin.cell.successBorder : 'rgba(255,107,107,0.4)') : currentSkin.cell.border}};"
+          >1</view>
+          <view
+            class="pad-btn {{tappedKey === 2 ? 'tapping ' + tappedType : ''}}"
+            bindtap="onDigitTap"
+            data-num="2"
+            style="background: {{tappedKey === 2 ? (tappedType === 'success' ? currentSkin.cell.successBg : 'rgba(255,107,107,0.2)') : currentSkin.cell.bg}}; border-color: {{tappedKey === 2 ? (tappedType === 'success' ? currentSkin.cell.successBorder : 'rgba(255,107,107,0.4)') : currentSkin.cell.border}};"
+          >2</view>
+          <view
+            class="pad-btn {{tappedKey === 3 ? 'tapping ' + tappedType : ''}}"
+            bindtap="onDigitTap"
+            data-num="3"
+            style="background: {{tappedKey === 3 ? (tappedType === 'success' ? currentSkin.cell.successBg : 'rgba(255,107,107,0.2)') : currentSkin.cell.bg}}; border-color: {{tappedKey === 3 ? (tappedType === 'success' ? currentSkin.cell.successBorder : 'rgba(255,107,107,0.4)') : currentSkin.cell.border}};"
+          >3</view>
+        </view>
+        <view class="pad-row">
+          <view
+            class="pad-btn {{tappedKey === 4 ? 'tapping ' + tappedType : ''}}"
+            bindtap="onDigitTap"
+            data-num="4"
+            style="background: {{tappedKey === 4 ? (tappedType === 'success' ? currentSkin.cell.successBg : 'rgba(255,107,107,0.2)') : currentSkin.cell.bg}}; border-color: {{tappedKey === 4 ? (tappedType === 'success' ? currentSkin.cell.successBorder : 'rgba(255,107,107,0.4)') : currentSkin.cell.border}};"
+          >4</view>
+          <view
+            class="pad-btn {{tappedKey === 5 ? 'tapping ' + tappedType : ''}}"
+            bindtap="onDigitTap"
+            data-num="5"
+            style="background: {{tappedKey === 5 ? (tappedType === 'success' ? currentSkin.cell.successBg : 'rgba(255,107,107,0.2)') : currentSkin.cell.bg}}; border-color: {{tappedKey === 5 ? (tappedType === 'success' ? currentSkin.cell.successBorder : 'rgba(255,107,107,0.4)') : currentSkin.cell.border}};"
+          >5</view>
+          <view
+            class="pad-btn {{tappedKey === 6 ? 'tapping ' + tappedType : ''}}"
+            bindtap="onDigitTap"
+            data-num="6"
+            style="background: {{tappedKey === 6 ? (tappedType === 'success' ? currentSkin.cell.successBg : 'rgba(255,107,107,0.2)') : currentSkin.cell.bg}}; border-color: {{tappedKey === 6 ? (tappedType === 'success' ? currentSkin.cell.successBorder : 'rgba(255,107,107,0.4)') : currentSkin.cell.border}};"
+          >6</view>
+        </view>
+        <view class="pad-row">
+          <view
+            class="pad-btn {{tappedKey === 7 ? 'tapping ' + tappedType : ''}}"
+            bindtap="onDigitTap"
+            data-num="7"
+            style="background: {{tappedKey === 7 ? (tappedType === 'success' ? currentSkin.cell.successBg : 'rgba(255,107,107,0.2)') : currentSkin.cell.bg}}; border-color: {{tappedKey === 7 ? (tappedType === 'success' ? currentSkin.cell.successBorder : 'rgba(255,107,107,0.4)') : currentSkin.cell.border}};"
+          >7</view>
+          <view
+            class="pad-btn {{tappedKey === 8 ? 'tapping ' + tappedType : ''}}"
+            bindtap="onDigitTap"
+            data-num="8"
+            style="background: {{tappedKey === 8 ? (tappedType === 'success' ? currentSkin.cell.successBg : 'rgba(255,107,107,0.2)') : currentSkin.cell.bg}}; border-color: {{tappedKey === 8 ? (tappedType === 'success' ? currentSkin.cell.successBorder : 'rgba(255,107,107,0.4)') : currentSkin.cell.border}};"
+          >8</view>
+          <view
+            class="pad-btn {{tappedKey === 9 ? 'tapping ' + tappedType : ''}}"
+            bindtap="onDigitTap"
+            data-num="9"
+            style="background: {{tappedKey === 9 ? (tappedType === 'success' ? currentSkin.cell.successBg : 'rgba(255,107,107,0.2)') : currentSkin.cell.bg}}; border-color: {{tappedKey === 9 ? (tappedType === 'success' ? currentSkin.cell.successBorder : 'rgba(255,107,107,0.4)') : currentSkin.cell.border}};"
+          >9</view>
+        </view>
+        <view class="pad-row">
+          <view class="pad-btn empty"></view>
+          <view
+            class="pad-btn {{tappedKey === 0 ? 'tapping ' + tappedType : ''}}"
+            bindtap="onDigitTap"
+            data-num="0"
+            style="background: {{tappedKey === 0 ? (tappedType === 'success' ? currentSkin.cell.successBg : 'rgba(255,107,107,0.2)') : currentSkin.cell.bg}}; border-color: {{tappedKey === 0 ? (tappedType === 'success' ? currentSkin.cell.successBorder : 'rgba(255,107,107,0.4)') : currentSkin.cell.border}};"
+          >0</view>
+          <view class="pad-btn delete {{tappedKey === -2 ? 'tapping' : ''}}" bindtap="onDeleteTap">←</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 完成状态 -->
+  <view class="finish-screen" wx:if="{{gameState === 'finished'}}">
+    <view class="finish-content animate-scale-in">
+      <!-- 结果图标 -->
+      <view class="result-icon-container">
+        <text class="result-icon">{{isPerfect ? '🎉' : '💪'}}</text>
+        <text class="result-title">{{isPerfect ? '完美记忆！' : '继续加油'}}</text>
+      </view>
+
+      <!-- 评级 -->
+      <view class="rating-container">
+        <view class="rating-circle" style="border-color: {{ratingColor}}; box-shadow: 0 0 40rpx {{ratingColor}}40;">
+          <text class="rating-text" style="color: {{ratingColor}}">{{rating}}</text>
+        </view>
+        <text class="rating-label" wx:if="{{rating === 'S'}}">完美！</text>
+        <text class="rating-label" wx:elif="{{rating === 'A'}}">优秀！</text>
+        <text class="rating-label" wx:elif="{{rating === 'B'}}">不错！</text>
+        <text class="rating-label" wx:elif="{{rating === 'C'}}">继续加油</text>
+      </view>
+
+      <!-- 成绩卡片 -->
+      <view class="result-card card">
+        <view class="result-item">
+          <text class="result-label">得分</text>
+          <text class="result-value score">{{score}}</text>
+        </view>
+        <view class="result-divider"></view>
+        <view class="result-item">
+          <text class="result-label">难度</text>
+          <text class="result-value">{{level}}位</text>
+        </view>
+        <view class="result-divider"></view>
+        <view class="result-item">
+          <text class="result-label">用时</text>
+          <text class="result-value">{{inputTime}}</text>
+        </view>
+      </view>
+
+      <!-- 序列对比 -->
+      <view class="sequence-compare card">
+        <text class="compare-label">正确序列</text>
+        <view class="compare-nums">
+          <text
+            class="compare-num"
+            wx:for="{{sequence}}"
+            wx:key="index"
+            style="background: {{currentSkin.cell.activeBg}}; color: {{currentSkin.cell.text}};"
+          >{{item}}</text>
+        </view>
+        <text class="compare-label">你的输入</text>
+        <view class="compare-nums">
+          <text
+            class="compare-num {{slotCorrect[index] ? 'correct' : 'wrong'}}"
+            wx:for="{{sequence}}"
+            wx:key="index"
+            style="background: {{slotCorrect[index] ? 'rgba(0,184,148,0.15)' : 'rgba(255,107,107,0.15)'}}; color: {{slotCorrect[index] ? '#00B894' : '#FF6B6B'}};"
+          >{{userInput[index] !== undefined ? userInput[index] : '-'}}</text>
+        </view>
+      </view>
+
+      <!-- 新纪录 -->
+      <view class="new-record" wx:if="{{isNewRecord}}">
+        <text class="record-icon">🏆</text>
+        <text class="record-text">新纪录！</text>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="action-buttons">
+        <button class="btn-double" wx:if="{{!doubleClaimed}}" bindtap="watchAdDoublePoints">📺 看视频双倍积分 (+{{earnedPoints}})</button>
+        <button class="btn-double claimed" wx:else disabled>✅ 双倍积分已领取</button>
+        <button class="btn-primary" bindtap="restart" style="background: linear-gradient(135deg, {{currentSkin.accent}} 0%, {{currentSkin.accent}}88 100%)">再来一次</button>
+        <button class="btn-secondary" bindtap="nextLevel" wx:if="{{level < 12}}">下一难度</button>
+        <button class="btn-secondary" bindtap="goHome">返回首页</button>
+      </view>
+
+      <!-- 分享按钮 -->
+      <button class="share-btn" open-type="share">
+        <text class="share-icon">📤</text>
+        <text class="share-text">分享成绩</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 新手引导 -->
+  <view class="guide-overlay {{showGuide ? 'show' : ''}}" catchtap="closeGuide">
+    <view class="guide-card" catchtap="">
+      <view class="guide-icon">{{guideSteps[guideStep].icon}}</view>
+      <text class="guide-title">{{guideSteps[guideStep].title}}</text>
+      <text class="guide-desc">{{guideSteps[guideStep].desc}}</text>
+      <view class="guide-dots">
+        <view class="guide-dot {{index === guideStep ? 'active' : ''}}" wx:for="{{guideSteps}}" wx:key="index"></view>
+      </view>
+      <view class="guide-btns">
+        <view class="guide-btn guide-skip" bindtap="closeGuide">跳过</view>
+        <view class="guide-btn guide-next" bindtap="nextGuide">{{guideStep < guideSteps.length - 1 ? '下一步' : '开始游戏'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 玩法说明 -->
+  <view class="rules-overlay {{showRules ? 'show' : ''}}" catchtap="closeRules">
+    <view class="rules-card" catchtap="">
+      <text class="rules-title">📖 玩法说明</text>
+      <scroll-view class="rules-body" scroll-y>
+        <view wx:for="{{rulesSections}}" wx:key="title">
+          <text class="rules-section-title">{{item.title}}</text>
+          <text class="rules-section-text">{{item.text}}</text>
+        </view>
+      </scroll-view>
+      <view class="guide-btn guide-next" bindtap="closeRules">知道了</view>
+    </view>
+  </view>
+</view>
