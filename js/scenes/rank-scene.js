@@ -26,7 +26,7 @@ class RankScene extends Scene {
   }
 
   onEnter() { this._checkLogin() }
-  onShow() { this._checkLogin() }
+  onShow() { this._touchMoved = true; this._checkLogin() }
 
   _checkLogin() {
     const nickName = wx.getStorageSync('nickName')

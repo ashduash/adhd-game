@@ -73,9 +73,12 @@ setTimeout(() => {
       // traceUser: false 避免框架创建 native view（Canvas-only 小游戏无 parent 节点）
       wx.cloud.init({ env: 'cloud1-d3g8g2icn594133d1', traceUser: false })
       GameGlobal._cloudReady = true
+      console.log('[云开发] 初始化成功, env: cloud1-d3g8g2icn594133d1')
     } catch (e) {
-      console.warn('云开发初始化失败，内容安全检测将使用服务端接口:', e)
+      console.error('[云开发] 初始化失败:', e.message || e)
     }
+  } else {
+    console.warn('[云开发] wx.cloud 不可用')
   }
 }, 1000)
 

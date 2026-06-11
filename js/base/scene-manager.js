@@ -12,6 +12,8 @@ class SceneManager {
     this.tabBar = null
     this._transitionAlpha = 0
     this._transitioning = false
+    // 触摸锁定：场景切换后短暂屏蔽触摸事件，防止穿透
+    this._touchLockedUntil = 0
   }
 
   // 注册场景类
@@ -31,6 +33,7 @@ class SceneManager {
 
   // 压入场景（替代 wx.navigateTo）
   push(sceneName, params) {
+    this._lockTouch()
     const current = this.top()
     if (current) current.onHide()
 
@@ -47,6 +50,7 @@ class SceneManager {
   // 弹出场景（替代 wx.navigateBack）
   pop() {
     if (this.stack.length <= 1) return
+    this._lockTouch()
     console.log('[SceneManager] pop, stack depth:', this.stack.length, 'popping:', this.top()?.constructor?.name)
     const top = this.stack.pop()
     try {
@@ -66,6 +70,7 @@ class SceneManager {
       if (GameGlobal.toast) GameGlobal.toast.show('请先登录')
       return
     }
+    this._lockTouch()
     console.log('[switchTab] 目标:', tabName, '当前栈:', this.stack.map(s => s.constructor.name).join(' → '))
     // 弹出所有非 Tab 场景
     while (this.stack.length > 1 && !this.stack[this.stack.length - 1]._isTab) {
@@ -100,6 +105,11 @@ class SceneManager {
     }
   }
 
+  // 锁定触摸事件（防止场景切换时触摸穿透）
+  _lockTouch(ms) {
+    this._touchLockedUntil = Date.now() + (ms || 300)
+  }
+
   // 获取栈顶场景
   top() {
     return this.stack[this.stack.length - 1]
@@ -126,6 +136,11 @@ class SceneManager {
 
   // 分发触摸事件
   dispatchTouch(type, x, y) {
+    // 触摸锁定期间忽略所有触摸事件（防止场景切换时触摸穿透）
+    if (Date.now() < this._touchLockedUntil) {
+      return
+    }
+
     // Tab 栏拦截 - 所有触摸类型都拦截，防止穿透到场景
     if (this.tabBar && this.top() && this.top()._isTab) {
       if (this.tabBar.hitTest(x, y)) {

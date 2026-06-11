@@ -66,6 +66,7 @@ class HomeScene extends Scene {
     this._refresh()
     this._enterTime = Date.now()
     this._entered = true
+    this._touchMoved = true // 防止场景切换时的触摸穿透触发点击
     this._checkLoginState()
   }
 

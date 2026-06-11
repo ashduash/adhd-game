@@ -303,15 +303,17 @@ const app = {
       bestScores: ud.bestScores
     }
     if (wx.cloud && GameGlobal._cloudReady) {
+      console.log('[syncScore] 使用云函数同步')
       return new Promise((resolve) => {
         wx.cloud.callFunction({
           name: 'leaderboard',
           data,
-          success: () => resolve(true),
-          fail: () => this._syncScoreHttp(data, resolve)
+          success: (res) => { console.log('[syncScore] 云函数成功:', res.result); resolve(true) },
+          fail: (err) => { console.warn('[syncScore] 云函数失败:', err); this._syncScoreHttp(data, resolve) }
         })
       })
     }
+    console.warn('[syncScore] 云函数不可用, _cloudReady:', GameGlobal._cloudReady)
     return this._syncScoreHttp(data, null)
   },
 

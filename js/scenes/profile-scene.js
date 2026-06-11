@@ -43,7 +43,7 @@ class ProfileScene extends Scene {
   }
 
   onEnter() { this._refresh() }
-  onShow() { this._refresh() }
+  onShow() { this._touchMoved = true; this._refresh() }
 
   _refresh() {
     const ud = app.globalData.userData
@@ -244,8 +244,8 @@ class ProfileScene extends Scene {
             loadAvatar(avatarUrl, (img) => { this._avatarImage = img })
             app.loginToServer(wx.getStorageSync('nickName'), avatarUrl).catch(() => {})
             GameGlobal.toast.show('头像已更新')
-          } catch (_) {
-            GameGlobal.toast.show('上传失败: ' + (e.message || '未知错误'))
+          } catch (uploadErr) {
+            GameGlobal.toast.show('上传失败: ' + (uploadErr.message || '未知错误'))
           }
         },
         fail: (err) => {

@@ -70,8 +70,8 @@ function getTodayTraining(trainingPlan) {
 
 function isTodayCompleted(trainingPlan) {
   if (!trainingPlan || !trainingPlan.completed) return false
-  const dayIndex = getCurrentDayIndex(trainingPlan)
-  return trainingPlan.completed.some(c => c.dayIndex === dayIndex)
+  const today = new Date().toISOString().slice(0, 10)
+  return trainingPlan.completed.includes(today)
 }
 
 function generateRadarData(completedGames) {
