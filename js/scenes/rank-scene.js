@@ -230,16 +230,16 @@ class RankScene extends Scene {
     } else {
       drawText(ctx, '😊', nameX, y + sp.md + sp.xs, { fontSize: fs.xl })
     }
-    drawText(ctx, sanitizeNickName(this.myRank.name) || '我', nameX + fs.xl + sp.sm, y + sp.md + sp.xs, {
+    drawText(ctx, sanitizeNickName(this.myRank.nickName) || '我', nameX + fs.xl + sp.sm, y + sp.md + sp.xs, {
       fontSize: fs.md, fontWeight: '600', color: THEME.textPrimary
     })
-    const rankInfo = RANKS[this.myRank.rankKey] || RANKS.bronze
+    const rankInfo = RANKS[this.myRank.rank] || RANKS.bronze
     drawText(ctx, `${rankInfo.icon} ${rankInfo.name}`, nameX + fs.xl + sp.sm, y + sp.md + fs.md + sp.sm + sp.xs, {
       fontSize: fs.xs, color: rankInfo.color
     })
 
     // 积分
-    drawText(ctx, String(this.myRank.score || 0), x + w - sp.lg, y + sp.md + sp.xs, {
+    drawText(ctx, String(this.myRank.rankPoints || 0), x + w - sp.lg, y + sp.md + sp.xs, {
       fontSize: fs.xl, fontWeight: '700', color: THEME.textPrimary, align: 'right'
     })
     drawText(ctx, '积分', x + w - sp.lg, y + sp.md + fs.xl + sp.sm + sp.xs, {
@@ -287,16 +287,16 @@ class RankScene extends Scene {
 
     // 名称和段位
     const nameX = avatarX + THEME.fontSize.lg + sp.sm
-    drawText(ctx, sanitizeNickName(item.name) || '匿名', nameX, y + sp.md, {
+    drawText(ctx, sanitizeNickName(item.nickName) || '匿名', nameX, y + sp.md, {
       fontSize: fs.sm, fontWeight: '600', color: isMe ? THEME.primary : THEME.textPrimary
     })
-    const ri = item.rankInfo || RANKS.bronze
+    const ri = RANKS[item.rank] || RANKS.bronze
     drawText(ctx, `${ri.icon || '🥉'} ${ri.name || '青铜'}`, nameX, y + sp.md + fs.sm + sp.xs, {
       fontSize: fs.xs, color: ri.color || '#CD7F32'
     })
 
     // 积分
-    drawText(ctx, String(item.score || 0), x + w - sp.lg - 50 * THEME.rpx, y + (h - fs.md) / 2, {
+    drawText(ctx, String(item.rankPoints || 0), x + w - sp.lg - 50 * THEME.rpx, y + (h - fs.md) / 2, {
       fontSize: fs.md, fontWeight: '700', color: THEME.textPrimary, align: 'right'
     })
 
