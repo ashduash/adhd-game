@@ -117,7 +117,7 @@ class AboutScene extends Scene {
 
     drawCenteredText(ctx, '专注风暴', sw / 2, y, { fontSize: fs.title, fontWeight: '700', color: THEME.textPrimary })
     y += fs.title + sp.xs
-    drawCenteredText(ctx, 'v1.0.1', sw / 2, y, { fontSize: fs.sm, color: THEME.textSecondary })
+    drawCenteredText(ctx, 'v1.0.2', sw / 2, y, { fontSize: fs.sm, color: THEME.textSecondary })
     y += fs.sm + sp.xs
     drawCenteredText(ctx, '专注力训练 · 思维挑战游戏', sw / 2, y, { fontSize: fs.sm, color: THEME.textSecondary })
     y += fs.sm + sp.xl
@@ -125,8 +125,8 @@ class AboutScene extends Scene {
     // 详情列表
     const cardW = sw - pad * 2
     const infoItems = [
-      { label: '版本号', value: '1.0.1' },
-      { label: '更新日期', value: '2026年5月29日' },
+      { label: '版本号', value: '1.0.2' },
+      { label: '更新日期', value: '2026年6月14日' },
       { label: '开发者', value: '专注风暴团队' },
       { label: '客服邮箱', value: 'support@brainstorm.app' }
     ]

@@ -4,7 +4,6 @@
 const Scene = require('../base/scene')
 const THEME = require('../config/theme')
 const { generateRandomSequence, vibrate } = require('../utils/util')
-const { calcRankPoints } = require('../utils/scoring')
 const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, drawGlowArc, fillShadowRoundedRect } = require('../base/draw-utils')
 const { hitTestGrid } = require('../base/ui/grid')
 const app = require('../app')
@@ -93,22 +92,19 @@ class SortScene extends Scene {
 
   _gameFinished() {
     this._stopTimer()
-    const sec = this.elapsedTime / 1000
+    // 每次失误加 2 秒惩罚时间
+    const penaltyMs = this.errors * 2000
+    const effectiveTime = this.elapsedTime + penaltyMs
+    const sec = effectiveTime / 1000
     const thresholds = { 9: [4, 8, 15, 26], 16: [7, 15, 28, 48], 25: [13, 26, 45, 75], 36: [21, 42, 72, 115] }
     const t = thresholds[this.level] || thresholds[9]
-    if (sec <= t[0]) { this.rating = 'S'; this.ratingLabel = '闪电速度' }
-    else if (sec <= t[1]) { this.rating = 'A'; this.ratingLabel = '非常优秀' }
-    else if (sec <= t[2]) { this.rating = 'B'; this.ratingLabel = '表现不错' }
-    else if (sec <= t[3]) { this.rating = 'C'; this.ratingLabel = '继续加油' }
-    else { this.rating = 'D'; this.ratingLabel = '继续加油' }
-    this.ratingColor = THEME.ratingColors[this.rating]
-    this.isNewRecord = app.updateBestScore('sort', this.level, this.elapsedTime)
-    this.earnedPoints = calcRankPoints('sort', this.level, this.rating)
-    const rankResult = app.addRankPoints(this.earnedPoints)
-    app.globalData.userData.totalGames++; app.saveUserData(); app.syncScoreToCloud().catch(e => console.warn("分数同步失败:", e))
-    this._completeDailyAndTraining(); this.gameState = 'finished'; this.doubleClaimed = false
-    app.tryShowInterstitial()
-    if (rankResult.promoted) { if (GameGlobal.audio) GameGlobal.audio.playSFX('rankUp'); setTimeout(() => GameGlobal.toast.show(`恭喜升段！你已晋升为${rankResult.newRank}段位！`, 3), 500) }
+    let rating
+    if (sec <= t[0]) rating = 'S'
+    else if (sec <= t[1]) rating = 'A'
+    else if (sec <= t[2]) rating = 'B'
+    else if (sec <= t[3]) rating = 'C'
+    else rating = 'D'
+    this._finishGameWithRating({ rating, gameMode: 'sort', level: this.level, score: this.elapsedTime })
   }
 
   onRender(ctx) {

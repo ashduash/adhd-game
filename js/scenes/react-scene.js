@@ -4,7 +4,7 @@
 const Scene = require('../base/scene')
 const THEME = require('../config/theme')
 const { vibrate } = require('../utils/util')
-const { calcRankPoints, getReactRating } = require('../utils/scoring')
+const { getReactRating } = require('../utils/scoring')
 const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, fillCircle, fillShadowRoundedRect } = require('../base/draw-utils')
 const app = require('../app')
 
@@ -46,12 +46,15 @@ class ReactScene extends Scene {
     if (this.gameState === 'paused') {
       this.gameState = 'playing'
       const cfg = DIFFICULTIES[this.difficulty]
+      const now = Date.now()
+      // 重置所有存活目标的时间戳，防止暂停期间被误判为过期
+      for (const t of this.targets) t.time = now
       this._spawnTimer = setInterval(() => this._spawnTarget(), cfg.spawn)
       this._tickTimer = setInterval(() => {
         this.remainingTime -= 0.1
         if (this.remainingTime <= 5 && this.remainingTime > 0 && Math.abs(this.remainingTime % 1) < 0.15 && GameGlobal.audio) GameGlobal.audio.playSFX('countdown')
-        const now = Date.now()
-        this.targets = this.targets.filter(t => { if (now - t.time > cfg.expire) { if (!t.fake) this.misses++; return false } return true })
+        const now2 = Date.now()
+        this.targets = this.targets.filter(t => { if (now2 - t.time > cfg.expire) { if (!t.fake) this.misses++; return false } return true })
         if (this.remainingTime <= 0) this._gameFinished()
       }, 100)
     }
@@ -110,19 +113,8 @@ class ReactScene extends Scene {
 
   _gameFinished() {
     this._stopTimers()
-    this.rating = getReactRating(this.hits, this.hits + this.misses, this.falsePositives)
-    this.ratingColor = THEME.ratingColors[this.rating]
-    if (this.rating === 'S') this.ratingLabel = '完美'
-    else if (this.rating === 'A') this.ratingLabel = '优秀'
-    else if (this.rating === 'B') this.ratingLabel = '不错'
-    else this.ratingLabel = '继续加油'
-    this.earnedPoints = calcRankPoints('react', this.difficulty, this.rating)
-    app.updateBestScore('react', this.difficulty, this.maxCombo)
-    const rankResult = app.addRankPoints(this.earnedPoints)
-    app.globalData.userData.totalGames++; app.saveUserData(); app.syncScoreToCloud().catch(e => console.warn("分数同步失败:", e))
-    this._completeDailyAndTraining(); this.gameState = 'finished'; this.doubleClaimed = false
-    app.tryShowInterstitial()
-    if (rankResult.promoted) { if (GameGlobal.audio) GameGlobal.audio.playSFX('rankUp'); setTimeout(() => GameGlobal.toast.show(`恭喜升段！你已晋升为${rankResult.newRank}段位！`, 3), 500) }
+    const rating = getReactRating(this.hits, this.hits + this.misses, this.falsePositives)
+    this._finishGameWithRating({ rating, gameMode: 'react', level: this.difficulty, score: this.maxCombo })
   }
 
   onRender(ctx) {

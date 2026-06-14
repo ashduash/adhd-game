@@ -4,7 +4,6 @@
 const Scene = require('../base/scene')
 const THEME = require('../config/theme')
 const { vibrate } = require('../utils/util')
-const { calcRankPoints } = require('../utils/scoring')
 const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, fillCircle, fillShadowRoundedRect } = require('../base/draw-utils')
 const app = require('../app')
 
@@ -117,19 +116,13 @@ class StroopScene extends Scene {
     const sec = this.elapsedTime / 1000
     const thresholds = { 15: [7,14,22,32], 25: [12,22,36,55], 35: [17,32,50,75], 45: [22,42,65,95], 60: [28,52,82,120] }
     const t = thresholds[this.level] || thresholds[15]
-    if (accuracy >= 100 && sec <= t[0]) { this.rating = 'S'; this.ratingLabel = '完美' }
-    else if (accuracy >= 97 && sec <= t[1]) { this.rating = 'A'; this.ratingLabel = '优秀' }
-    else if (accuracy >= 90 && sec <= t[2]) { this.rating = 'B'; this.ratingLabel = '不错' }
-    else if (accuracy >= 75 && sec <= t[3]) { this.rating = 'C'; this.ratingLabel = '继续加油' }
-    else { this.rating = 'D'; this.ratingLabel = '继续加油' }
-    this.ratingColor = THEME.ratingColors[this.rating]
-    this.isNewRecord = app.updateBestScore('stroop', this.level, this.correct)
-    this.earnedPoints = calcRankPoints('stroop', this.level, this.rating)
-    const rankResult = app.addRankPoints(this.earnedPoints)
-    app.globalData.userData.totalGames++; app.saveUserData(); app.syncScoreToCloud().catch(e => console.warn("分数同步失败:", e))
-    this._completeDailyAndTraining(); this.gameState = 'finished'; this.doubleClaimed = false
-    app.tryShowInterstitial()
-    if (rankResult.promoted) { if (GameGlobal.audio) GameGlobal.audio.playSFX('rankUp'); setTimeout(() => GameGlobal.toast.show(`恭喜升段！你已晋升为${rankResult.newRank}段位！`, 3), 500) }
+    let rating
+    if (accuracy >= 100 && sec <= t[0]) rating = 'S'
+    else if (accuracy >= 97 && sec <= t[1]) rating = 'A'
+    else if (accuracy >= 90 && sec <= t[2]) rating = 'B'
+    else if (accuracy >= 75 && sec <= t[3]) rating = 'C'
+    else rating = 'D'
+    this._finishGameWithRating({ rating, gameMode: 'stroop', level: this.level, score: this.correct })
   }
 
   onRender(ctx) {

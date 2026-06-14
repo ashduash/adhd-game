@@ -438,7 +438,7 @@ class ProfileScene extends Scene {
     y += btnH + sp.lg
 
     // 版本信息
-    drawCenteredText(ctx, '专注风暴 v1.0.1', sw / 2, y, { fontSize: fs.xs, color: THEME.textSecondary })
+    drawCenteredText(ctx, '专注风暴 v1.0.2', sw / 2, y, { fontSize: fs.xs, color: THEME.textSecondary })
     y += fs.xs + sp.xxl
 
     this._contentHeight = y

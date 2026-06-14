@@ -81,7 +81,7 @@ class Scene {
     }
     // 训练计划
     if (this.params && this.params.training && ud.trainingPlan) {
-      const today = new Date().toISOString().slice(0, 10)
+      const now = new Date(); const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
       if (!ud.trainingPlan.completed) ud.trainingPlan.completed = []
       if (!ud.trainingPlan.completed.includes(today)) {
         ud.trainingPlan.completed.push(today)
@@ -506,6 +506,33 @@ class Scene {
     return false
   }
 
+  // 通用结算流程：子类算好评级后调用此方法完成后续操作
+  // cfg: { rating, ratingLabel, gameMode, level, score, stats }
+  _finishGameWithRating(cfg) {
+    const { calcRankPoints } = require('../utils/scoring')
+    this.rating = cfg.rating
+    this.ratingColor = THEME.ratingColors[this.rating] || '#ffffff'
+    if (this.rating === 'S') this.ratingLabel = '完美'
+    else if (this.rating === 'A') this.ratingLabel = '优秀'
+    else if (this.rating === 'B') this.ratingLabel = '不错'
+    else this.ratingLabel = '继续加油'
+    if (cfg.ratingLabel) this.ratingLabel = cfg.ratingLabel
+    this.isNewRecord = app.updateBestScore(cfg.gameMode, cfg.level, cfg.score)
+    this.earnedPoints = calcRankPoints(cfg.gameMode, cfg.level, this.rating)
+    const rankResult = app.addRankPoints(this.earnedPoints)
+    app.globalData.userData.totalGames++
+    app.saveUserData()
+    app.syncScoreToCloud().catch(e => console.warn('分数同步失败:', e))
+    this._completeDailyAndTraining()
+    this.gameState = 'finished'
+    this.doubleClaimed = false
+    app.tryShowInterstitial()
+    if (rankResult.promoted) {
+      if (GameGlobal.audio) GameGlobal.audio.playSFX('rankUp')
+      setTimeout(() => GameGlobal.toast.show(`恭喜升段！你已晋升为${rankResult.newRank}段位！`, 3), 500)
+    }
+  }
+
   // 准备页触控处理（难度/开始/规则/皮肤），返回 true 表示已处理
   _handleReadyTouch(x, y, onLevelChange) {
     const sy = y + this.scrollY
@@ -537,9 +564,7 @@ class Scene {
       // 扩大点击区域：上下各增加 20px 容错
       const r = this._homeBtnRect
       const expanded = { x: r.x - 10, y: r.y - 20, w: r.w + 20, h: r.h + 40 }
-      if (this._hit(x, sy, expanded)) { console.log('[结算页] 返回首页按钮命中，执行 switchTab'); GameGlobal.sceneManager.switchTab('home'); return true }
-      // 调试日志：触摸未命中时输出坐标信息
-      console.log(`[结算页] 触摸(${Math.round(x)},${Math.round(y)}) sy=${Math.round(sy)} scrollY=${Math.round(this.scrollY)} 按钮区域(${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.w)},${Math.round(r.h)})`)
+      if (this._hit(x, sy, expanded)) { GameGlobal.sceneManager.switchTab('home'); return true }
     }
     return false
   }

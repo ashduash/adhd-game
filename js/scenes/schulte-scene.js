@@ -3,9 +3,9 @@
  */
 const Scene = require('../base/scene')
 const THEME = require('../config/theme')
-const { formatTime, shuffleArray, calculateRating, vibrate } = require('../utils/util')
+const { formatTime, shuffleArray, vibrate } = require('../utils/util')
 const { getCellColors } = require('../utils/skins')
-const { calcRankPoints } = require('../utils/scoring')
+const { getSchulteRating } = require('../utils/scoring')
 const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, drawGlowArc, fillShadowRoundedRect } = require('../base/draw-utils')
 const { calculateGridPositions, hitTestGrid } = require('../base/ui/grid')
 const app = require('../app')
@@ -52,6 +52,15 @@ class SchulteScene extends Scene {
 
   onResume() {
     if (this.gameState === 'paused') {
+      // 恢复暂停时保存的状态
+      const saved = wx.getStorageSync('schulte_paused')
+      if (saved) {
+        this.grid = saved.grid
+        this.nextNumber = saved.nextNumber
+        this.totalNumbers = saved.totalNumbers
+        this.elapsedTime = saved.elapsedTime
+        this.hintMode = saved.hintMode
+      }
       wx.removeStorageSync('schulte_paused')
       this.gameState = 'playing'
       this._startTimer()
@@ -93,10 +102,6 @@ class SchulteScene extends Scene {
   onTouchStart(x, y) {
     if (this._handleOverlayTouch(x, y)) return
 
-    if (this.gameState === 'finished') {
-      console.log('[Schulte] 结算页触摸:', Math.round(x), Math.round(y), 'scrollY:', Math.round(this.scrollY))
-    }
-
     if (this.gameState === 'ready') {
       // 提示按钮
       if (this._hintBtnRect && this._hit(x, y, this._hintBtnRect)) { this.hintMode = !this.hintMode; return }
@@ -135,25 +140,8 @@ class SchulteScene extends Scene {
     this._stopTimer()
     wx.removeStorageSync('schulte_paused')
     const elapsedSeconds = this.elapsedTime / 1000
-    const thresholds = {
-      3: [6, 12, 20, 35], 4: [12, 24, 42, 70], 5: [24, 48, 78, 110],
-      6: [42, 80, 130, 180], 7: [72, 144, 220, 320], 8: [108, 208, 340, 460],
-      9: [150, 288, 450, 650], 10: [210, 400, 630, 900]
-    }
-    this.rating = calculateRating(elapsedSeconds, thresholds[this.level] || thresholds[4])
-    this.ratingColor = THEME.ratingColors[this.rating] || '#ffffff'
-    if (this.rating === 'S') this.ratingLabel = '完美'
-    else if (this.rating === 'A') this.ratingLabel = '优秀'
-    else if (this.rating === 'B') this.ratingLabel = '不错'
-    else this.ratingLabel = '继续加油'
-    this.isNewRecord = app.updateBestScore('schulte', this.level, this.elapsedTime)
-    this.earnedPoints = calcRankPoints('schulte', this.level, this.rating)
-    const rankResult = app.addRankPoints(this.earnedPoints)
-    app.globalData.userData.totalGames++
-    app.saveUserData(); app.syncScoreToCloud().catch(e => console.warn('分数同步失败:', e))
-    this._completeDailyAndTraining(); this.gameState = 'finished'; this.doubleClaimed = false
-    app.tryShowInterstitial()
-    if (rankResult.promoted) { if (GameGlobal.audio) GameGlobal.audio.playSFX('rankUp'); setTimeout(() => GameGlobal.toast.show(`恭喜升段！你已晋升为${rankResult.newRank}段位！`, 3), 500) }
+    const rating = getSchulteRating(elapsedSeconds, this.level)
+    this._finishGameWithRating({ rating, gameMode: 'schulte', level: this.level, score: this.elapsedTime })
   }
 
   onRender(ctx) {

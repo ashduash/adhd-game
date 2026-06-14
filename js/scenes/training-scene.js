@@ -25,7 +25,7 @@ class TrainingScene extends Scene {
   _refresh() {
     const plan = app.globalData.userData.trainingPlan
     if (!plan || !plan.cycleStart) {
-      const today = new Date().toISOString().slice(0, 10)
+      const now = new Date(); const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
       app.globalData.userData.trainingPlan = { cycleStart: today, dayIndex: 0, completed: [] }
       app.saveUserData()
     }

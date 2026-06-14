@@ -50,8 +50,7 @@ function generateDailyChallenge() {
     mode: modeConfig.mode,
     level: modeConfig.levels[levelIndex],
     title: modeConfig.titles[levelIndex],
-    target: modeConfig.targets[levelIndex],
-    participants: Math.floor(1000 + (seed % 5000))
+    target: modeConfig.targets[levelIndex]
   }
 }
 

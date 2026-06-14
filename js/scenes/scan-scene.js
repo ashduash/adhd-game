@@ -4,7 +4,6 @@
 const Scene = require('../base/scene')
 const THEME = require('../config/theme')
 const { vibrate } = require('../utils/util')
-const { calcRankPoints } = require('../utils/scoring')
 const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, fillShadowRoundedRect } = require('../base/draw-utils')
 const { hitTestGrid } = require('../base/ui/grid')
 const app = require('../app')
@@ -111,28 +110,22 @@ class ScanScene extends Scene {
     this._stopTimer()
     const accuracy = this.level > 0 ? (this.found / this.level * 100) : 0
     const completed = this.found >= this.level
+    let rating, ratingLabel
     if (completed) {
       const elapsed = this.timeLimit - this.remainingTime
       const thresholds = { 16: [4, 7, 10, 14], 25: [5, 9, 14, 18], 36: [7, 12, 18, 25], 49: [11, 18, 26, 36], 64: [15, 24, 36, 48] }
       const t = thresholds[this.level] || thresholds[25]
-      if (elapsed <= t[0]) { this.rating = 'S'; this.ratingLabel = '闪电速度' }
-      else if (elapsed <= t[1]) { this.rating = 'A'; this.ratingLabel = '非常优秀' }
-      else if (elapsed <= t[2]) { this.rating = 'B'; this.ratingLabel = '表现不错' }
-      else if (elapsed <= t[3]) { this.rating = 'C'; this.ratingLabel = '继续加油' }
-      else { this.rating = 'D'; this.ratingLabel = '继续努力' }
+      if (elapsed <= t[0]) { rating = 'S'; ratingLabel = '闪电速度' }
+      else if (elapsed <= t[1]) { rating = 'A'; ratingLabel = '非常优秀' }
+      else if (elapsed <= t[2]) { rating = 'B'; ratingLabel = '表现不错' }
+      else if (elapsed <= t[3]) { rating = 'C'; ratingLabel = '继续加油' }
+      else { rating = 'D'; ratingLabel = '继续努力' }
     } else {
-      if (accuracy >= 90) { this.rating = 'B'; this.ratingLabel = '差一点点' }
-      else if (accuracy >= 70) { this.rating = 'C'; this.ratingLabel = '继续加油' }
-      else { this.rating = 'D'; this.ratingLabel = '继续努力' }
+      if (accuracy >= 90) { rating = 'B'; ratingLabel = '差一点点' }
+      else if (accuracy >= 70) { rating = 'C'; ratingLabel = '继续加油' }
+      else { rating = 'D'; ratingLabel = '继续努力' }
     }
-    this.ratingColor = THEME.ratingColors[this.rating]
-    this.isNewRecord = app.updateBestScore('scan', this.level, this.found)
-    this.earnedPoints = calcRankPoints('scan', this.level, this.rating)
-    const rankResult = app.addRankPoints(this.earnedPoints)
-    app.globalData.userData.totalGames++; app.saveUserData(); app.syncScoreToCloud().catch(e => console.warn("分数同步失败:", e))
-    this._completeDailyAndTraining(); this.gameState = 'finished'; this.doubleClaimed = false
-    app.tryShowInterstitial()
-    if (rankResult.promoted) { if (GameGlobal.audio) GameGlobal.audio.playSFX('rankUp'); setTimeout(() => GameGlobal.toast.show(`恭喜升段！你已晋升为${rankResult.newRank}段位！`, 3), 500) }
+    this._finishGameWithRating({ rating, ratingLabel, gameMode: 'scan', level: this.level, score: this.found })
   }
 
   onRender(ctx) {

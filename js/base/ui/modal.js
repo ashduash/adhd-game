@@ -1,7 +1,7 @@
 /**
  * 弹窗组件 - 引导、规则、确认等弹窗
  */
-const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, roundedRect } = require('../draw-utils')
+const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, roundedRect, wrapText } = require('../draw-utils')
 const THEME = require('../../config/theme')
 
 class Modal {
@@ -144,24 +144,6 @@ class Modal {
   hitTest(x, y) {
     return this.visible
   }
-}
-
-// 文字自动换行
-function wrapText(ctx, text, maxWidth, fontSize) {
-  ctx.font = `400 ${fontSize}px ${THEME.fontFamily}`
-  const lines = []
-  let line = ''
-  for (let i = 0; i < text.length; i++) {
-    const testLine = line + text[i]
-    if (ctx.measureText(testLine).width > maxWidth && line.length > 0) {
-      lines.push(line)
-      line = text[i]
-    } else {
-      line = testLine
-    }
-  }
-  if (line) lines.push(line)
-  return lines
 }
 
 module.exports = Modal

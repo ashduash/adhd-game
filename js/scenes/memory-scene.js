@@ -4,7 +4,7 @@
 const Scene = require('../base/scene')
 const THEME = require('../config/theme')
 const { vibrate } = require('../utils/util')
-const { calcRankPoints, getMemoryRating } = require('../utils/scoring')
+const { getMemoryRating } = require('../utils/scoring')
 const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, drawGlowArc, fillShadowRoundedRect } = require('../base/draw-utils')
 const app = require('../app')
 
@@ -146,19 +146,8 @@ class MemoryScene extends Scene {
     }
     this.correct = correct; this.total = this.level
     const accuracy = correct / this.level
-    this.rating = getMemoryRating(accuracy, perfect, inputTime, this.level)
-    this.ratingColor = THEME.ratingColors[this.rating]
-    if (this.rating === 'S') this.ratingLabel = '完美'
-    else if (this.rating === 'A') this.ratingLabel = '优秀'
-    else if (this.rating === 'B') this.ratingLabel = '不错'
-    else this.ratingLabel = '继续加油'
-    this.isNewRecord = app.updateBestScore('memory', this.level, correct)
-    this.earnedPoints = calcRankPoints('memory', this.level, this.rating)
-    const rankResult = app.addRankPoints(this.earnedPoints)
-    app.globalData.userData.totalGames++; app.saveUserData(); app.syncScoreToCloud().catch(e => console.warn("分数同步失败:", e))
-    this._completeDailyAndTraining(); this.gameState = 'finished'; this.doubleClaimed = false
-    app.tryShowInterstitial()
-    if (rankResult.promoted) { if (GameGlobal.audio) GameGlobal.audio.playSFX('rankUp'); setTimeout(() => GameGlobal.toast.show(`恭喜升段！你已晋升为${rankResult.newRank}段位！`, 3), 500) }
+    const rating = getMemoryRating(accuracy, perfect, inputTime, this.level)
+    this._finishGameWithRating({ rating, gameMode: 'memory', level: this.level, score: correct })
   }
 
   onRender(ctx) {

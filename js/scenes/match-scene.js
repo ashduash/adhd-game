@@ -4,7 +4,7 @@
 const Scene = require('../base/scene')
 const THEME = require('../config/theme')
 const { vibrate } = require('../utils/util')
-const { calcRankPoints, getMatchRating } = require('../utils/scoring')
+const { getMatchRating } = require('../utils/scoring')
 const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, roundedRect, fillShadowRoundedRect } = require('../base/draw-utils')
 const { getGameSkin } = require('../utils/skins')
 const app = require('../app')
@@ -54,7 +54,7 @@ class MatchScene extends Scene {
   }
 
   initGame() {
-    this.grid = []; this.selected = null; this.score = 0; this.combo = 0; this.maxCombo = 0; this._deadlock = false; if (this._deadlockTimer) { clearTimeout(this._deadlockTimer); this._deadlockTimer = null }
+    this.grid = []; this.selected = null; this.score = 0; this.combo = 0; this.maxCombo = 0; this._deadlock = false; this._shuffleUsed = false; if (this._deadlockTimer) { clearTimeout(this._deadlockTimer); this._deadlockTimer = null }
     const timeMap = { 4: 60, 5: 80, 6: 100, 7: 130, 8: 180 }
     this.remainingTime = timeMap[this.gridSize] || 80
     this.resetGameState()
@@ -126,9 +126,21 @@ class MatchScene extends Scene {
       }
     }
     if (!this._hasValidMoves()) {
-      this._deadlock = true
-      GameGlobal.toast.show('没有可消除的方块了')
-      this._deadlockTimer = setTimeout(() => this._gameFinished(), 500)
+      if (!this._shuffleUsed) {
+        // 给一次免费洗牌机会
+        this._shuffleUsed = true
+        this._shuffleBoard()
+        GameGlobal.toast.show('棋盘已重排')
+        // 重排后再次检查（极小概率仍然无解）
+        if (!this._hasValidMoves()) {
+          this._deadlock = true
+          this._deadlockTimer = setTimeout(() => this._gameFinished(), 500)
+        }
+      } else {
+        this._deadlock = true
+        GameGlobal.toast.show('没有可消除的方块了')
+        this._deadlockTimer = setTimeout(() => this._gameFinished(), 500)
+      }
     }
   }
 
@@ -144,23 +156,33 @@ class MatchScene extends Scene {
     return false
   }
 
+  _shuffleBoard() {
+    // 收集所有非空格子的颜色
+    const colors = []
+    for (let r = 0; r < this.gridSize; r++) {
+      for (let c = 0; c < this.gridSize; c++) {
+        if (this.grid[r][c] !== -1) colors.push(this.grid[r][c])
+      }
+    }
+    // Fisher-Yates 洗牌
+    for (let i = colors.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));[colors[i], colors[j]] = [colors[j], colors[i]]
+    }
+    // 重新填入
+    let idx = 0
+    for (let r = 0; r < this.gridSize; r++) {
+      for (let c = 0; c < this.gridSize; c++) {
+        if (this.grid[r][c] !== -1) this.grid[r][c] = colors[idx++]
+      }
+    }
+  }
+
   _gameFinished() {
     if (this.gameState === 'finished') return
     this._stopTimer(); if (this._deadlockTimer) { clearTimeout(this._deadlockTimer); this._deadlockTimer = null }
-    this.rating = getMatchRating(this.score, this.gridSize)
-    this.ratingColor = THEME.ratingColors[this.rating]
-    if (this._deadlock) this.ratingLabel = '无可用步数'
-    else if (this.rating === 'S') this.ratingLabel = '完美'
-    else if (this.rating === 'A') this.ratingLabel = '优秀'
-    else if (this.rating === 'B') this.ratingLabel = '不错'
-    else this.ratingLabel = '继续加油'
-    this.earnedPoints = calcRankPoints('match', this.gridSize, this.rating)
-    app.updateBestScore('match', this.gridSize, this.score)
-    const rankResult = app.addRankPoints(this.earnedPoints)
-    app.globalData.userData.totalGames++; app.saveUserData(); app.syncScoreToCloud().catch(e => console.warn("分数同步失败:", e))
-    this._completeDailyAndTraining(); this.gameState = 'finished'; this.doubleClaimed = false
-    app.tryShowInterstitial()
-    if (rankResult.promoted) { if (GameGlobal.audio) GameGlobal.audio.playSFX('rankUp'); setTimeout(() => GameGlobal.toast.show(`恭喜升段！你已晋升为${rankResult.newRank}段位！`, 3), 500) }
+    const rating = getMatchRating(this.score, this.gridSize)
+    const ratingLabel = this._deadlock ? '无可用步数' : undefined
+    this._finishGameWithRating({ rating, ratingLabel, gameMode: 'match', level: this.gridSize, score: this.score })
   }
 
   onRender(ctx) {

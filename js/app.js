@@ -50,20 +50,7 @@ const app = {
     // 加载本地存储的用户数据
     const userData = wx.getStorageSync('userData')
     if (userData) {
-      if (!userData.bestScores) userData.bestScores = {}
-      if (!userData.bestScores.schulte) userData.bestScores.schulte = {}
-      if (!userData.bestScores.memory) userData.bestScores.memory = {}
-      if (!userData.bestScores.scan) userData.bestScores.scan = {}
-      if (!userData.bestScores.stroop) userData.bestScores.stroop = {}
-      if (!userData.bestScores.react) userData.bestScores.react = {}
-      if (!userData.bestScores.match) userData.bestScores.match = {}
-      if (!userData.bestScores.sort) userData.bestScores.sort = {}
-      if (!userData.bestScores.dual) userData.bestScores.dual = {}
-      if (userData.streak === undefined) userData.streak = 0
-      if (userData.streakFreeze === undefined) userData.streakFreeze = 0
-      if (!userData.dailyChallenge) userData.dailyChallenge = { date: null, completed: false, mode: null, level: null }
-      if (!userData.trainingPlan) userData.trainingPlan = { cycleStart: null, dayIndex: 0, completed: [] }
-      if (!userData.achievements) userData.achievements = []
+      this._migrateUserData(userData)
       this.globalData.userData = userData
     }
   },
@@ -71,6 +58,26 @@ const app = {
   // 保存用户数据
   saveUserData() {
     wx.setStorageSync('userData', this.globalData.userData)
+  },
+
+  // 数据迁移：根据版本号补全缺失字段
+  _migrateUserData(ud) {
+    const currentVersion = 2
+    const version = ud._version || 1
+
+    if (version < 2) {
+      // v1 → v2: 补全所有游戏分数对象
+      const modes = ['schulte', 'memory', 'scan', 'stroop', 'react', 'match', 'sort', 'dual']
+      if (!ud.bestScores) ud.bestScores = {}
+      for (const m of modes) { if (!ud.bestScores[m]) ud.bestScores[m] = {} }
+      if (ud.streak === undefined) ud.streak = 0
+      if (ud.streakFreeze === undefined) ud.streakFreeze = 0
+      if (!ud.dailyChallenge) ud.dailyChallenge = { date: null, completed: false, mode: null, level: null }
+      if (!ud.trainingPlan) ud.trainingPlan = { cycleStart: null, dayIndex: 0, completed: [] }
+      if (!ud.achievements) ud.achievements = []
+    }
+
+    ud._version = currentVersion
   },
 
   // 保存主题设置
@@ -82,7 +89,7 @@ const app = {
   // 更新最佳成绩
   updateBestScore(mode, level, score) {
     const bestScores = this.globalData.userData.bestScores
-    const higherBetter = ['match', 'memory', 'scan', 'stroop']
+    const higherBetter = ['match', 'memory', 'scan', 'stroop', 'react', 'dual']
     const isNew = higherBetter.includes(mode)
       ? (!bestScores[mode][level] || score > bestScores[mode][level])
       : (!bestScores[mode][level] || score < bestScores[mode][level])

@@ -1,5 +1,20 @@
 // 新游戏评分标准
 
+// Schulte评级：基于用时（秒）和网格大小
+function getSchulteRating(elapsedSeconds, gridSize) {
+  const thresholds = {
+    3: [6, 12, 20, 35], 4: [12, 24, 42, 70], 5: [24, 48, 78, 110],
+    6: [42, 80, 130, 180], 7: [72, 144, 220, 320], 8: [108, 208, 340, 460],
+    9: [150, 288, 450, 650], 10: [210, 400, 630, 900]
+  }
+  const t = thresholds[gridSize] || thresholds[4]
+  if (elapsedSeconds <= t[0]) return 'S'
+  if (elapsedSeconds <= t[1]) return 'A'
+  if (elapsedSeconds <= t[2]) return 'B'
+  if (elapsedSeconds <= t[3]) return 'C'
+  return 'D'
+}
+
 // Stroop评级：基于正确率和时间
 function getStroopRating(accuracy, timeUsed, questionCount) {
   const timeThresholds = {
@@ -117,6 +132,7 @@ function getMemoryRating(accuracy, isPerfect, inputTime, level) {
 }
 
 module.exports = {
+  getSchulteRating,
   getStroopRating,
   getReactRating,
   getMatchRating,

@@ -70,7 +70,9 @@ function getTodayTraining(trainingPlan) {
 
 function isTodayCompleted(trainingPlan) {
   if (!trainingPlan || !trainingPlan.completed) return false
-  const today = new Date().toISOString().slice(0, 10)
+  // 使用本地时间，避免 UTC 偏移导致日期错误
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   return trainingPlan.completed.includes(today)
 }
 

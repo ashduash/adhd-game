@@ -9,6 +9,7 @@ class AudioManager {
     this._initialized = false
     this._muted = false
     this._bgmPlaying = false
+    this._bgmShouldResume = false
     this._bgmNodes = []
     this._bgmGain = null
     this._sfxVolume = 0.6
@@ -35,6 +36,10 @@ class AudioManager {
 
   _ensureCtx() {
     if (!this._initialized) this.init()
+    // iOS/微信 AudioContext 可能处于 suspended 状态，需要 resume
+    if (this._ctx && this._ctx.state === 'suspended') {
+      this._ctx.resume().catch(() => {})
+    }
     return this._ctx !== null
   }
 
@@ -163,10 +168,12 @@ class AudioManager {
     const chordDuration = 2.0
     const totalDuration = chords.length * chordDuration
 
-    this._bgmGain = ctx.createGain()
-    this._bgmGain.gain.setValueAtTime(0, now)
-    this._bgmGain.gain.linearRampToValueAtTime(this._bgmVolume, now + 0.5)
-    this._bgmGain.connect(ctx.destination)
+    // 使用持久的 master gain 节点，音量变更即时生效
+    if (!this._bgmGain) {
+      this._bgmGain = ctx.createGain()
+      this._bgmGain.connect(ctx.destination)
+    }
+    this._bgmGain.gain.setValueAtTime(this._bgmVolume, now)
 
     chords.forEach((chord, ci) => {
       const startTime = now + ci * chordDuration
@@ -213,14 +220,14 @@ class AudioManager {
 
   pauseBGM() {
     if (this._bgmPlaying) {
+      this._bgmShouldResume = true
       this.stopBGM()
-      this._bgmPlaying = true // 标记需要恢复
     }
   }
 
   resumeBGM() {
-    if (this._bgmPlaying && !this._muted) {
-      this._bgmPlaying = false // 重置状态以便 playBGM 能启动
+    if (this._bgmShouldResume && !this._muted) {
+      this._bgmShouldResume = false
       this.playBGM()
     }
   }
