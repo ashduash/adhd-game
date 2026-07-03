@@ -3,23 +3,13 @@
  */
 const Scene = require('../base/scene')
 const THEME = require('../config/theme')
-const { RANKS, getRankProgress, formatSeconds } = require('../utils/util')
+const { RANKS, getRankProgress } = require('../utils/util')
 const { generateDailyChallenge, getTodayString, canUseStreakFreeze, useStreakFreeze } = require('../utils/daily')
-const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, drawCenteredTextV, drawGradientText, drawCenteredGradientText, fillGradientRoundedRect, roundedRect, fillShadowRoundedRect, fillCircle } = require('../base/draw-utils')
+const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, drawCenteredGradientText, fillGradientRoundedRect, fillShadowRoundedRect } = require('../base/draw-utils')
+const { MODES } = require('../config/modes')
 const app = require('../app')
 
 const EASING = { easeOut: t => 1 - Math.pow(1 - t, 3) }
-
-const MODES = [
-  { id: 'schulte', name: '数字风暴', desc: '经典舒尔特方格', icon: '⚡', gradient: ['#C07A45', '#D4A574'] },
-  { id: 'memory', name: '记忆还原', desc: '挑战你的工作记忆', icon: '🧠', gradient: ['#7BAE7F', '#9CCF9F'] },
-  { id: 'scan', name: '闪电扫视', desc: '极速视觉搜索', icon: '👁️', gradient: ['#D4915C', '#E8B87C'] },
-  { id: 'stroop', name: '斯特鲁普', desc: '认知抑制挑战', icon: '🎭', gradient: ['#C77D8A', '#E0A0AC'] },
-  { id: 'react', name: '极速反应', desc: '反应速度训练', icon: '🎯', gradient: ['#7BA5A0', '#9CC5C0'] },
-  { id: 'match', name: '色彩消除', desc: '消除配对挑战', icon: '🌈', gradient: ['#D4A574', '#C8965C'] },
-  { id: 'sort', name: '序列排序', desc: '顺序还原挑战', icon: '📊', gradient: ['#9B8EC4', '#B5AAD4'] },
-  { id: 'dual', name: '双线任务', desc: '多线程注意力', icon: '🔀', gradient: ['#C07A70', '#D49088'] }
-]
 
 class HomeScene extends Scene {
   constructor(params) {
@@ -589,13 +579,9 @@ class HomeScene extends Scene {
     })
 
     // 内容
-    const modeNames = {
-      schulte: '数字风暴', memory: '记忆还原', scan: '闪电扫视',
-      stroop: '斯特鲁普', react: '极速反应', match: '色彩消除',
-      sort: '序列排序', dual: '双线任务'
-    }
     const ch = this.dailyChallenge
-    const title = ch.level ? `${ch.level} ${modeNames[ch.mode] || ''}` : (modeNames[ch.mode] || '')
+    const modeName = (MODES.find(m => m.id === ch.mode) || {}).name || ''
+    const title = ch.level ? `${ch.level} ${modeName}` : modeName
     drawText(ctx, title, x + sp.lg, y + 50 * THEME.rpx, {
       fontSize: THEME.fontSize.lg, fontWeight: '700', color: THEME.textPrimary
     })
@@ -607,8 +593,8 @@ class HomeScene extends Scene {
     const arrowSize = 56 * THEME.rpx
     const arrowX = x + w - sp.lg - arrowSize; const arrowY = y + (h - arrowSize) / 2
     fillRoundedRect(ctx, arrowX, arrowY, arrowSize, arrowSize, arrowSize / 2, THEME.btnSecondaryBg)
-    drawCenteredTextV(ctx, '→', arrowX + arrowSize / 2, arrowY + arrowSize / 2, {
-      fontSize: THEME.fontSize.lg, color: THEME.textPrimary
+    drawCenteredText(ctx, '→', arrowX + arrowSize / 2, arrowY + arrowSize / 2, {
+      fontSize: THEME.fontSize.lg, color: THEME.textPrimary, baseline: 'middle'
     })
   }
 

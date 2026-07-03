@@ -140,15 +140,6 @@ const getCellColors = (skin, state) => {
   }
 }
 
-// 绘制皮肤背景到Canvas
-const drawSkinBackground = (ctx, skin, width, height) => {
-  const gradient = ctx.createLinearGradient(0, 0, 0, height)
-  gradient.addColorStop(0, skin.bgColors[0])
-  gradient.addColorStop(1, skin.bgColors[1])
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, width, height)
-}
-
 // 各游戏专属皮肤数据
 const GAME_SKINS = {
   night: {
@@ -409,11 +400,7 @@ const getGameSkin = (gameId, skinId) => {
 }
 
 module.exports = {
-  SKINS,
-  GAME_SKINS,
-  getSkin,
   getAllSkins,
   getCellColors,
-  getGameSkin,
-  drawSkinBackground
+  getGameSkin
 }

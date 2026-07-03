@@ -5,32 +5,19 @@ function getTodayString() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function generateDailySeed() {
+function _getYesterdayString() {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function _generateDailySeed() {
   const today = new Date()
   return today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate()
 }
 
-function calculateStreak(lastPlayDate, currentStreak) {
-  const today = getTodayString()
-  if (lastPlayDate === today) return currentStreak
-
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
-
-  if (lastPlayDate === yesterdayStr) return currentStreak + 1
-  return 1
-}
-
-function getStreakMultiplier(streak) {
-  if (streak >= 30) return 5
-  if (streak >= 14) return 3
-  if (streak >= 7) return 2
-  return 1
-}
-
 function generateDailyChallenge() {
-  const seed = generateDailySeed()
+  const seed = _generateDailySeed()
   const allModes = [
     { mode: 'schulte', levels: [3, 4, 5, 6], titles: ['3×3 数字风暴', '4×4 数字风暴', '5×5 数字风暴', '6×6 数字风暴'], targets: ['25秒内完成', '60秒内完成', '90秒内完成', '150秒内完成'] },
     { mode: 'memory', levels: [4, 6, 8, 10], titles: ['4位记忆还原', '6位记忆还原', '8位记忆还原', '10位记忆还原'], targets: ['完美还原', '完美还原', '完美还原', '完美还原'] },
@@ -62,9 +49,7 @@ function canUseStreakFreeze(lastPlayDate) {
   const today = getTodayString()
   if (lastPlayDate === today) return false
 
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
+  const yesterdayStr = _getYesterdayString()
 
   // 昨天已打卡，不需要补签
   if (lastPlayDate === yesterdayStr) return false
@@ -76,22 +61,15 @@ function canUseStreakFreeze(lastPlayDate) {
  * 使用补签卡，将 lastPlayDate 设为昨天，恢复连续打卡
  */
 function useStreakFreeze(lastPlayDate, currentStreak) {
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
-
   // 返回补签后的状态
   return {
-    lastPlayDate: yesterdayStr,
+    lastPlayDate: _getYesterdayString(),
     streak: currentStreak > 0 ? currentStreak : 1
   }
 }
 
 module.exports = {
   getTodayString,
-  generateDailySeed,
-  calculateStreak,
-  getStreakMultiplier,
   generateDailyChallenge,
   canUseStreakFreeze,
   useStreakFreeze

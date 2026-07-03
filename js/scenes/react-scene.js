@@ -5,7 +5,7 @@ const Scene = require('../base/scene')
 const THEME = require('../config/theme')
 const { vibrate } = require('../utils/util')
 const { getReactRating } = require('../utils/scoring')
-const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, fillCircle, fillShadowRoundedRect } = require('../base/draw-utils')
+const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, fillCircle } = require('../base/draw-utils')
 const app = require('../app')
 
 const DIFFICULTIES = {

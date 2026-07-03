@@ -6,6 +6,20 @@
 
 const { SENSITIVE_WORDS } = require('./sensitive-words')
 
+// 通用超时包装：防止 Promise 被多次 resolve
+function _withTimeout(promise, ms, defaultResult) {
+  return new Promise((resolve) => {
+    let settled = false
+    const safeResolve = (result) => {
+      if (settled) return
+      settled = true
+      resolve(result)
+    }
+    setTimeout(() => safeResolve(defaultResult), ms)
+    promise.then(safeResolve, () => safeResolve(defaultResult))
+  })
+}
+
 // 模式匹配规则（正则）
 const BLOCKED_PATTERNS = [
   /^dev_/i,           // 开发环境 ID
@@ -60,34 +74,22 @@ function checkLocal(text) {
  * @returns {Promise<{ pass: boolean, reason: string }>}
  */
 function _checkByCloud(content) {
-  return new Promise((resolve) => {
-    if (!wx.cloud || !GameGlobal._cloudReady) {
-      resolve(null) // 云不可用，返回 null 表示需要回退
-      return
-    }
+  if (!wx.cloud || !GameGlobal._cloudReady) return Promise.resolve(null)
 
-    let settled = false
-    const safeResolve = (result) => {
-      if (settled) return
-      settled = true
-      resolve(result)
-    }
-
-    setTimeout(() => safeResolve(null), 3000)
-
+  return _withTimeout(new Promise((resolve) => {
     wx.cloud.callFunction({
       name: 'contentCheck',
       data: { content: content.trim() },
       success: (res) => {
         if (res.result && res.result.errCode === 0) {
-          safeResolve({ pass: true, reason: '' })
+          resolve({ pass: true, reason: '' })
         } else {
-          safeResolve({ pass: false, reason: (res.result && res.result.errMsg) || '昵称包含违规内容，请修改后重试' })
+          resolve({ pass: false, reason: (res.result && res.result.errMsg) || '昵称包含违规内容，请修改后重试' })
         }
       },
-      fail: () => safeResolve(null)
+      fail: () => resolve(null)
     })
-  })
+  }), 3000, null)
 }
 
 /**
@@ -97,25 +99,14 @@ function _checkByCloud(content) {
  * @returns {Promise<{ pass: boolean, reason: string }>}
  */
 function _checkByServer(content, serverUrl) {
-  return new Promise((resolve) => {
-    if (!serverUrl) {
-      resolve({ pass: false, reason: '内容检测服务不可用，请稍后重试' })
-      return
-    }
+  if (!serverUrl) return Promise.resolve({ pass: false, reason: '内容检测服务不可用，请稍后重试' })
 
-    let settled = false
-    const safeResolve = (result) => {
-      if (settled) return
-      settled = true
-      resolve(result)
-    }
+  const openid = (typeof GameGlobal !== 'undefined' && GameGlobal.app)
+    ? GameGlobal.app.getOpenid()
+    : ''
+  const timeoutResult = { pass: false, reason: '内容检测超时，请稍后重试' }
 
-    setTimeout(() => safeResolve({ pass: false, reason: '内容检测超时，请稍后重试' }), 5000)
-
-    const openid = (typeof GameGlobal !== 'undefined' && GameGlobal.app)
-      ? GameGlobal.app.getOpenid()
-      : ''
-
+  return _withTimeout(new Promise((resolve) => {
     wx.request({
       url: serverUrl + '/api/check-content',
       method: 'POST',
@@ -123,14 +114,14 @@ function _checkByServer(content, serverUrl) {
       timeout: 5000,
       success: (res) => {
         if (res.data && res.data.errCode === 0) {
-          safeResolve({ pass: true, reason: '' })
+          resolve({ pass: true, reason: '' })
         } else {
-          safeResolve({ pass: false, reason: (res.data && res.data.errMsg) || '昵称包含违规内容，请修改后重试' })
+          resolve({ pass: false, reason: (res.data && res.data.errMsg) || '昵称包含违规内容，请修改后重试' })
         }
       },
-      fail: () => safeResolve({ pass: false, reason: '内容检测服务不可用，请稍后重试' })
+      fail: () => resolve({ pass: false, reason: '内容检测服务不可用，请稍后重试' })
     })
-  })
+  }), 5000, timeoutResult)
 }
 
 /**
@@ -155,34 +146,22 @@ async function checkContent(text, serverUrl) {
  * @returns {Promise<{ pass: boolean, reason: string } | null>}
  */
 function _checkImageByCloud(imageBase64) {
-  return new Promise((resolve) => {
-    if (!wx.cloud || !GameGlobal._cloudReady) {
-      resolve(null)
-      return
-    }
+  if (!wx.cloud || !GameGlobal._cloudReady) return Promise.resolve(null)
 
-    let settled = false
-    const safeResolve = (result) => {
-      if (settled) return
-      settled = true
-      resolve(result)
-    }
-
-    setTimeout(() => safeResolve(null), 3000)
-
+  return _withTimeout(new Promise((resolve) => {
     wx.cloud.callFunction({
       name: 'contentCheck',
       data: { type: 'imgSecCheck', media: imageBase64 },
       success: (res) => {
         if (res.result && res.result.errCode === 0) {
-          safeResolve({ pass: true, reason: '' })
+          resolve({ pass: true, reason: '' })
         } else {
-          safeResolve({ pass: false, reason: (res.result && res.result.errMsg) || '图片含有违规内容' })
+          resolve({ pass: false, reason: (res.result && res.result.errMsg) || '图片含有违规内容' })
         }
       },
-      fail: () => safeResolve(null)
+      fail: () => resolve(null)
     })
-  })
+  }), 3000, null)
 }
 
 /**
@@ -192,21 +171,11 @@ function _checkImageByCloud(imageBase64) {
  * @returns {Promise<{ pass: boolean, reason: string }>}
  */
 function _checkImageByServer(imageBase64, serverUrl) {
-  return new Promise((resolve) => {
-    if (!serverUrl) {
-      resolve({ pass: false, reason: '图片检测服务不可用，请稍后重试' })
-      return
-    }
+  if (!serverUrl) return Promise.resolve({ pass: false, reason: '图片检测服务不可用，请稍后重试' })
 
-    let settled = false
-    const safeResolve = (result) => {
-      if (settled) return
-      settled = true
-      resolve(result)
-    }
+  const timeoutResult = { pass: false, reason: '图片检测超时，请稍后重试' }
 
-    setTimeout(() => safeResolve({ pass: false, reason: '图片检测超时，请稍后重试' }), 5000)
-
+  return _withTimeout(new Promise((resolve) => {
     wx.request({
       url: serverUrl + '/api/check-image',
       method: 'POST',
@@ -214,109 +183,14 @@ function _checkImageByServer(imageBase64, serverUrl) {
       timeout: 5000,
       success: (res) => {
         if (res.data && res.data.errCode === 0) {
-          safeResolve({ pass: true, reason: '' })
+          resolve({ pass: true, reason: '' })
         } else {
-          safeResolve({ pass: false, reason: (res.data && res.data.errMsg) || '图片含有违规内容' })
+          resolve({ pass: false, reason: (res.data && res.data.errMsg) || '图片含有违规内容' })
         }
       },
-      fail: () => safeResolve({ pass: false, reason: '图片检测服务不可用，请稍后重试' })
+      fail: () => resolve({ pass: false, reason: '图片检测服务不可用，请稍后重试' })
     })
-  })
-}
-
-/**
- * 通过云函数调用 mediaCheckAsync（异步媒体检测）
- * @param {string} mediaUrl - 媒体文件URL
- * @returns {Promise<{ pass: boolean, reason: string, traceId?: string } | null>}
- */
-function _checkMediaByCloud(mediaUrl) {
-  return new Promise((resolve) => {
-    if (!wx.cloud || !GameGlobal._cloudReady) {
-      resolve(null)
-      return
-    }
-
-    let settled = false
-    const safeResolve = (result) => {
-      if (settled) return
-      settled = true
-      resolve(result)
-    }
-
-    setTimeout(() => safeResolve(null), 3000)
-
-    wx.cloud.callFunction({
-      name: 'contentCheck',
-      data: { type: 'mediaCheckAsync', mediaUrl },
-      success: (res) => {
-        if (res.result && res.result.errCode === 0) {
-          safeResolve({ pass: true, reason: '', traceId: res.result.traceId })
-        } else {
-          safeResolve({ pass: false, reason: (res.result && res.result.errMsg) || '媒体检测失败' })
-        }
-      },
-      fail: () => safeResolve(null)
-    })
-  })
-}
-
-/**
- * 通过服务端 HTTP 接口调用 mediaCheckAsync
- * @param {string} mediaUrl - 媒体文件URL
- * @param {string} serverUrl
- * @returns {Promise<{ pass: boolean, reason: string, traceId?: string }>}
- */
-function _checkMediaByServer(mediaUrl, serverUrl) {
-  return new Promise((resolve) => {
-    if (!serverUrl) {
-      resolve({ pass: false, reason: '媒体检测服务不可用，请稍后重试' })
-      return
-    }
-
-    let settled = false
-    const safeResolve = (result) => {
-      if (settled) return
-      settled = true
-      resolve(result)
-    }
-
-    setTimeout(() => safeResolve({ pass: false, reason: '媒体检测超时，请稍后重试' }), 5000)
-
-    wx.request({
-      url: serverUrl + '/api/check-media-async',
-      method: 'POST',
-      data: { mediaUrl, mediaType: 2 },
-      timeout: 5000,
-      success: (res) => {
-        if (res.data && res.data.errCode === 0) {
-          safeResolve({ pass: true, reason: '', traceId: res.data.traceId })
-        } else {
-          safeResolve({ pass: false, reason: (res.data && res.data.errMsg) || '媒体检测失败' })
-        }
-      },
-      fail: () => safeResolve({ pass: false, reason: '媒体检测服务不可用，请稍后重试' })
-    })
-  })
-}
-
-/**
- * 异步媒体安全检查（mediaCheckAsync）
- * 优先云函数 → 回退服务端 HTTP → 最终拒绝
- * @param {string} mediaUrl - 媒体文件URL
- * @param {string} serverUrl
- * @returns {Promise<{ pass: boolean, reason: string, traceId?: string }>}
- */
-async function checkMediaAsync(mediaUrl, serverUrl) {
-  if (!mediaUrl) {
-    return { pass: false, reason: '媒体URL不能为空' }
-  }
-
-  // 优先尝试云函数
-  const cloudResult = await _checkMediaByCloud(mediaUrl)
-  if (cloudResult !== null) return cloudResult
-
-  // 云不可用，回退到服务端 HTTP
-  return await _checkMediaByServer(mediaUrl, serverUrl)
+  }), 5000, timeoutResult)
 }
 
 /**
@@ -361,6 +235,5 @@ module.exports = {
   checkLocal,
   checkContent,
   checkImage,
-  checkMediaAsync,
   sanitizeNickName
 }

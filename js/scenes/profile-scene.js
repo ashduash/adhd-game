@@ -5,21 +5,11 @@ const Scene = require('../base/scene')
 const THEME = require('../config/theme')
 const { RANKS, getRankProgress } = require('../utils/util')
 const { getAchievementsByCategory } = require('../utils/achievements')
-const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, drawArc, fillShadowRoundedRect, fillCircle } = require('../base/draw-utils')
+const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, fillShadowRoundedRect, fillCircle } = require('../base/draw-utils')
 const { checkLocal, checkContent, checkImage } = require('../utils/sensitive-filter')
 const { loadAvatar, DEFAULT_AVATAR_EMOJI } = require('../utils/avatar-loader')
+const { MODE_MAP } = require('../config/modes')
 const app = require('../app')
-
-const MODE_NAMES = {
-  schulte: { name: '数字风暴', icon: '⚡' },
-  memory: { name: '记忆还原', icon: '🧠' },
-  scan: { name: '闪电扫视', icon: '👁️' },
-  stroop: { name: '斯特鲁普', icon: '🎭' },
-  react: { name: '极速反应', icon: '🎯' },
-  match: { name: '色彩消除', icon: '🌈' },
-  sort: { name: '序列排序', icon: '📊' },
-  dual: { name: '双线任务', icon: '🔀' }
-}
 
 class ProfileScene extends Scene {
   constructor(params) {
@@ -73,9 +63,9 @@ class ProfileScene extends Scene {
     ]
 
     this.bestScores = []
-    for (const mode of Object.keys(MODE_NAMES)) {
+    for (const mode of Object.keys(MODE_MAP)) {
       const scores = ud.bestScores[mode] || {}
-      const info = MODE_NAMES[mode]
+      const info = MODE_MAP[mode]
       const items = []
       if (mode === 'schulte') {
         for (const lv of [4, 5, 6]) {

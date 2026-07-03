@@ -4,7 +4,7 @@
  */
 
 // 注意：发布前必须替换为真实的广告单元 ID（在微信广告后台创建后填入）
-const AD_UNIT_IDS = {
+const _AD_UNIT_IDS = {
   rewarded: 'adunit-xxxxxxxxxxxx',       // TODO: 替换为真实激励视频广告单元 ID
   interstitial: 'adunit-yyyyyyyyyyyy'    // TODO: 替换为真实插屏广告单元 ID
 }
@@ -17,11 +17,9 @@ let interstitialAd = null
 function createRewardedAd() {
   if (!wx.createRewardedVideoAd) return null
   // 占位符 ID 时跳过创建，避免框架报 SystemError
-  if (!AD_UNIT_IDS.rewarded || AD_UNIT_IDS.rewarded.includes('xxx')) return null
+  if (!_AD_UNIT_IDS.rewarded || _AD_UNIT_IDS.rewarded.includes('xxx')) return null
 
-  rewardedAd = wx.createRewardedVideoAd({ adUnitId: AD_UNIT_IDS.rewarded })
-
-  rewardedAd.onLoad(() => {})
+  rewardedAd = wx.createRewardedVideoAd({ adUnitId: _AD_UNIT_IDS.rewarded })
 
   rewardedAd.onError((err) => {
     console.warn('激励视频广告加载失败:', err)
@@ -68,11 +66,10 @@ function showRewardedAd() {
 function createInterstitialAd() {
   if (!wx.createInterstitialAd) return null
   // 占位符 ID 时跳过创建，避免框架报 SystemError
-  if (!AD_UNIT_IDS.interstitial || AD_UNIT_IDS.interstitial.includes('yyy')) return null
+  if (!_AD_UNIT_IDS.interstitial || _AD_UNIT_IDS.interstitial.includes('yyy')) return null
 
-  interstitialAd = wx.createInterstitialAd({ adUnitId: AD_UNIT_IDS.interstitial })
+  interstitialAd = wx.createInterstitialAd({ adUnitId: _AD_UNIT_IDS.interstitial })
 
-  interstitialAd.onLoad(() => {})
   interstitialAd.onError((err) => {
     console.warn('插屏广告加载失败:', err)
   })
@@ -91,7 +88,6 @@ function tryShowInterstitial(gameCount) {
 }
 
 module.exports = {
-  AD_UNIT_IDS,
   createRewardedAd,
   showRewardedAd,
   createInterstitialAd,

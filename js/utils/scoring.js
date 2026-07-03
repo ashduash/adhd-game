@@ -15,24 +15,6 @@ function getSchulteRating(elapsedSeconds, gridSize) {
   return 'D'
 }
 
-// Stroop评级：基于正确率和时间
-function getStroopRating(accuracy, timeUsed, questionCount) {
-  const timeThresholds = {
-    15: [7, 14, 22, 32],
-    25: [12, 22, 36, 55],
-    35: [17, 32, 50, 75],
-    45: [22, 42, 65, 95],
-    60: [28, 52, 82, 120]
-  }
-  const thresholds = timeThresholds[questionCount] || timeThresholds[15]
-
-  if (accuracy >= 100 && timeUsed <= thresholds[0]) return 'S'
-  if (accuracy >= 97 && timeUsed <= thresholds[1]) return 'A'
-  if (accuracy >= 90 && timeUsed <= thresholds[2]) return 'B'
-  if (accuracy >= 75 && timeUsed <= thresholds[3]) return 'C'
-  return 'D'
-}
-
 // React评级：基于命中率和误点率
 function getReactRating(hits, totalTargets, falsePositives) {
   const hitRate = totalTargets > 0 ? hits / totalTargets : 0
@@ -60,23 +42,6 @@ function getMatchRating(score, gridSize) {
   if (score >= t[1]) return 'A'
   if (score >= t[2]) return 'B'
   if (score >= t[3]) return 'C'
-  return 'D'
-}
-
-// Sort评级：基于时间
-function getSortRating(timeUsed, itemCount) {
-  const timeThresholds = {
-    9: [4, 8, 15, 26],
-    16: [7, 15, 28, 48],
-    25: [13, 26, 45, 75],
-    36: [21, 42, 72, 115]
-  }
-  const t = timeThresholds[itemCount] || timeThresholds[9]
-
-  if (timeUsed <= t[0]) return 'S'
-  if (timeUsed <= t[1]) return 'A'
-  if (timeUsed <= t[2]) return 'B'
-  if (timeUsed <= t[3]) return 'C'
   return 'D'
 }
 
@@ -133,12 +98,9 @@ function getMemoryRating(accuracy, isPerfect, inputTime, level) {
 
 module.exports = {
   getSchulteRating,
-  getStroopRating,
   getReactRating,
   getMatchRating,
-  getSortRating,
   getDualRating,
-  getRatingPoints,
   calcRankPoints,
   getMemoryRating
 }

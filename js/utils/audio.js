@@ -248,11 +248,6 @@ class AudioManager {
     return this._muted
   }
 
-  setVolume(type, value) {
-    if (type === 'bgm') this._bgmVolume = Math.max(0, Math.min(1, value))
-    else if (type === 'sfx') this._sfxVolume = Math.max(0, Math.min(1, value))
-  }
-
   destroy() {
     this.stopBGM()
     if (this._ctx) {

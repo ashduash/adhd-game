@@ -5,7 +5,7 @@ const Scene = require('../base/scene')
 const THEME = require('../config/theme')
 const { vibrate } = require('../utils/util')
 const { getMemoryRating } = require('../utils/scoring')
-const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, drawGlowArc, fillShadowRoundedRect } = require('../base/draw-utils')
+const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect } = require('../base/draw-utils')
 const app = require('../app')
 
 class MemoryScene extends Scene {

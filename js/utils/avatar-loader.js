@@ -91,16 +91,7 @@ function _notifyAll(url, img) {
   }
 }
 
-/**
- * 清除缓存（内存管理）
- */
-function clearAvatarCache() {
-  cache.clear()
-  loading.clear()
-}
-
 module.exports = {
   loadAvatar,
-  clearAvatarCache,
   DEFAULT_AVATAR_EMOJI
 }

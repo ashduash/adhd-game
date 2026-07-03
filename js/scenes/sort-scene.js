@@ -3,8 +3,8 @@
  */
 const Scene = require('../base/scene')
 const THEME = require('../config/theme')
-const { generateRandomSequence, vibrate } = require('../utils/util')
-const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, drawGlowArc, fillShadowRoundedRect } = require('../base/draw-utils')
+const { generateRandomSequence, vibrate, formatTime } = require('../utils/util')
+const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect } = require('../base/draw-utils')
 const { hitTestGrid } = require('../base/ui/grid')
 const app = require('../app')
 
@@ -200,7 +200,5 @@ class SortScene extends Scene {
     })
   }
 }
-
-function formatTime(ms) { const s = Math.floor(ms / 1000); const m = Math.floor(s / 60); return `${m}:${String(s % 60).padStart(2, '0')}.${String(Math.floor((ms % 1000) / 10)).padStart(2, '0')}` }
 
 module.exports = SortScene

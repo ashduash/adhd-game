@@ -63,11 +63,6 @@ function getCurrentDayIndex(trainingPlan) {
   return diffDays % 5
 }
 
-function getTodayTraining(trainingPlan) {
-  const dayIndex = getCurrentDayIndex(trainingPlan)
-  return TRAINING_DAYS[dayIndex]
-}
-
 function isTodayCompleted(trainingPlan) {
   if (!trainingPlan || !trainingPlan.completed) return false
   // 使用本地时间，避免 UTC 偏移导致日期错误
@@ -76,50 +71,8 @@ function isTodayCompleted(trainingPlan) {
   return trainingPlan.completed.includes(today)
 }
 
-function generateRadarData(completedGames) {
-  const skills = {
-    attention: 0,
-    working_memory: 0,
-    reaction: 0,
-    pattern: 0,
-    multitask: 0,
-    inhibition: 0,
-    visual_search: 0,
-    sequential: 0
-  }
-
-  const counts = {}
-  for (const key of Object.keys(skills)) {
-    counts[key] = 0
-  }
-
-  for (const game of completedGames) {
-    if (game.skill && skills[game.skill] !== undefined) {
-      const ratingScore = { 'S': 100, 'A': 80, 'B': 60, 'C': 40, 'D': 20 }
-      skills[game.skill] += ratingScore[game.rating] || 50
-      counts[game.skill]++
-    }
-  }
-
-  for (const key of Object.keys(skills)) {
-    if (counts[key] > 0) {
-      skills[key] = Math.min(100, skills[key] / counts[key])
-    }
-  }
-
-  return {
-    attention: Math.round((skills.attention + skills.visual_search) / 2),
-    memory: Math.round((skills.working_memory + skills.sequential) / 2),
-    speed: Math.round((skills.reaction + skills.inhibition) / 2),
-    pattern: Math.round(skills.pattern),
-    multitask: Math.round(skills.multitask)
-  }
-}
-
 module.exports = {
   TRAINING_DAYS,
   getCurrentDayIndex,
-  getTodayTraining,
-  isTodayCompleted,
-  generateRadarData
+  isTodayCompleted
 }

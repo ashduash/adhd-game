@@ -6,7 +6,7 @@ const THEME = require('../config/theme')
 const { formatTime, shuffleArray, vibrate } = require('../utils/util')
 const { getCellColors } = require('../utils/skins')
 const { getSchulteRating } = require('../utils/scoring')
-const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, drawGlowArc, fillShadowRoundedRect } = require('../base/draw-utils')
+const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect } = require('../base/draw-utils')
 const { calculateGridPositions, hitTestGrid } = require('../base/ui/grid')
 const app = require('../app')
 

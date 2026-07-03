@@ -4,6 +4,7 @@
 const Scene = require('../base/scene')
 const THEME = require('../config/theme')
 const { TRAINING_DAYS, getCurrentDayIndex, isTodayCompleted } = require('../utils/training')
+const { getTodayString } = require('../utils/daily')
 const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, fillShadowRoundedRect } = require('../base/draw-utils')
 const app = require('../app')
 
@@ -25,7 +26,7 @@ class TrainingScene extends Scene {
   _refresh() {
     const plan = app.globalData.userData.trainingPlan
     if (!plan || !plan.cycleStart) {
-      const now = new Date(); const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      const today = getTodayString()
       app.globalData.userData.trainingPlan = { cycleStart: today, dayIndex: 0, completed: [] }
       app.saveUserData()
     }

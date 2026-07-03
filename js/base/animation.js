@@ -71,43 +71,6 @@ class Tween {
   }
 }
 
-// 脉冲动画（无限循环）
-class PulseAnimator {
-  constructor(target, prop, min, max, period) {
-    this.target = target
-    this.prop = prop
-    this.min = min
-    this.max = max
-    this.period = period
-    this.time = 0
-    this.done = false
-  }
-
-  update(dt) {
-    this.time += dt
-    const t = (Math.sin(this.time / this.period * Math.PI * 2) + 1) / 2
-    this.target[this.prop] = this.min + (this.max - this.min) * t
-  }
-}
-
-// 浮动动画（无限循环）
-class FloatAnimator {
-  constructor(target, prop, base, amplitude, period) {
-    this.target = target
-    this.prop = prop
-    this.base = base
-    this.amplitude = amplitude
-    this.period = period
-    this.time = 0
-    this.done = false
-  }
-
-  update(dt) {
-    this.time += dt
-    this.target[this.prop] = this.base + Math.sin(this.time / this.period * Math.PI * 2) * this.amplitude
-  }
-}
-
 class AnimationManager {
   constructor() {
     this.animations = []
@@ -119,18 +82,6 @@ class AnimationManager {
     return tw
   }
 
-  pulse(target, prop, min, max, period) {
-    const p = new PulseAnimator(target, prop, min, max, period)
-    this.animations.push(p)
-    return p
-  }
-
-  float(target, prop, base, amplitude, period) {
-    const f = new FloatAnimator(target, prop, base, amplitude, period)
-    this.animations.push(f)
-    return f
-  }
-
   update(dt) {
     this.animations = this.animations.filter(a => {
       a.update(dt)
@@ -138,9 +89,6 @@ class AnimationManager {
     })
   }
 
-  clear() {
-    this.animations = []
-  }
 }
 
-module.exports = { Tween, PulseAnimator, FloatAnimator, AnimationManager, EASING }
+module.exports = { Tween, AnimationManager }

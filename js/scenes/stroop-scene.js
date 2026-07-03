@@ -3,8 +3,8 @@
  */
 const Scene = require('../base/scene')
 const THEME = require('../config/theme')
-const { vibrate } = require('../utils/util')
-const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, fillCircle, fillShadowRoundedRect } = require('../base/draw-utils')
+const { vibrate, formatTime } = require('../utils/util')
+const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, fillCircle } = require('../base/draw-utils')
 const app = require('../app')
 
 const COLORS = [
@@ -195,7 +195,5 @@ class StroopScene extends Scene {
     })
   }
 }
-
-function formatTime(ms) { const s = Math.floor(ms / 1000); const m = Math.floor(s / 60); return `${m}:${String(s % 60).padStart(2, '0')}.${String(Math.floor((ms % 1000) / 10)).padStart(2, '0')}` }
 
 module.exports = StroopScene

@@ -58,7 +58,6 @@ if (wx.onUncaughtError) {
 const SceneManager = require('./js/base/scene-manager')
 const TabBar = require('./js/base/ui/tab-bar')
 const Toast = require('./js/base/ui/toast')
-const Modal = require('./js/base/ui/modal')
 const app = require('./js/app')
 const ads = require('./js/utils/ads')
 const THEME = require('./js/config/theme')

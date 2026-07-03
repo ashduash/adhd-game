@@ -39,27 +39,6 @@ const generateRandomSequence = (length, max = 99) => {
   return Array.from(numbers)
 }
 
-// 计算评级
-const calculateRating = (time, thresholds) => {
-  if (time <= thresholds[0]) return 'S'
-  if (time <= thresholds[1]) return 'A'
-  if (time <= thresholds[2]) return 'B'
-  if (time <= thresholds[3]) return 'C'
-  return 'D'
-}
-
-// 获取评级颜色
-const getRatingColor = (rating) => {
-  const colors = {
-    'S': '#D4A04A',
-    'A': '#7BAE7F',
-    'B': '#7BA5A0',
-    'C': '#D4A574',
-    'D': '#8A7E72'
-  }
-  return colors[rating] || '#F5EDE6'
-}
-
 // 段位信息
 const RANKS = {
   bronze: { name: '青铜', color: '#CD7F32', icon: '🥉', minPoints: 0 },
@@ -102,35 +81,12 @@ const vibrate = (type = 'light') => {
   }
 }
 
-// 显示提示（Canvas 版）
-const showToast = (title) => {
-  if (typeof GameGlobal !== 'undefined' && GameGlobal.toast) {
-    GameGlobal.toast.show(title, 1.5)
-  }
-}
-
-// 节流函数（leading-edge：立即执行，冷却期内忽略）
-const throttle = (fn, delay) => {
-  let lastTime = 0
-  return function (...args) {
-    const now = Date.now()
-    if (now - lastTime >= delay) {
-      lastTime = now
-      fn.apply(this, args)
-    }
-  }
-}
-
 module.exports = {
   formatTime,
   formatSeconds,
   shuffleArray,
   generateRandomSequence,
-  calculateRating,
-  getRatingColor,
   RANKS,
   getRankProgress,
-  vibrate,
-  showToast,
-  throttle
+  vibrate
 }

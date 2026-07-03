@@ -40,33 +40,6 @@ const ACHIEVEMENTS = [
   { id: 'rank_king', name: '王者归来', desc: '达到王者段位', icon: '🏆', category: '段位', check: (u) => u.rankPoints >= 2000 }
 ]
 
-function checkAchievements(userData) {
-  const newAchievements = []
-  for (const achievement of ACHIEVEMENTS) {
-    if (!userData.achievements.includes(achievement.id)) {
-      try {
-        if (achievement.check(userData)) {
-          userData.achievements.push(achievement.id)
-          newAchievements.push(achievement)
-          // 标记为新解锁，供 UI 显示
-          if (!userData._newAchievements) userData._newAchievements = []
-          userData._newAchievements.push(achievement.id)
-        }
-      } catch (e) {
-        // 检查函数出错时跳过
-      }
-    }
-  }
-  return newAchievements
-}
-
-// 获取并清除新解锁标记
-function consumeNewAchievements(userData) {
-  const ids = userData._newAchievements || []
-  userData._newAchievements = []
-  return ids
-}
-
 function getAchievementsByCategory() {
   const categories = {}
   for (const a of ACHIEVEMENTS) {
@@ -76,14 +49,6 @@ function getAchievementsByCategory() {
   return categories
 }
 
-function getAchievementById(id) {
-  return ACHIEVEMENTS.find(a => a.id === id)
-}
-
 module.exports = {
-  ACHIEVEMENTS,
-  checkAchievements,
-  getAchievementsByCategory,
-  getAchievementById,
-  consumeNewAchievements
+  getAchievementsByCategory
 }

@@ -134,12 +134,6 @@ const app = {
     return this.globalData.openid || wx.getStorageSync('openid') || null
   },
 
-  // 重置 openid（清除数据时调用）
-  resetOpenid() {
-    this.globalData.openid = null
-    wx.removeStorageSync('openid')
-  },
-
   // 清除所有应用数据（不清除云SDK缓存，避免触发原生视图崩溃）
   clearAppData() {
     const appKeys = [
@@ -249,12 +243,6 @@ const app = {
   _saveOpenid(openid) {
     this.globalData.openid = openid
     wx.setStorageSync('openid', openid)
-  },
-
-  // 退出登录
-  logout() {
-    this.globalData.openid = null
-    wx.removeStorageSync('openid')
   },
 
   // 登录到服务器（云函数优先，HTTP 兜底）

@@ -76,21 +76,6 @@ class AboutScene extends Scene {
   }
 
 
-  _openReport() {
-    if (typeof wx !== 'undefined' && wx.openCustomerServiceChat) {
-      wx.openCustomerServiceChat({
-        extInfo: { url: '' },
-        corpId: '',
-        success: () => {},
-        fail: () => {
-          GameGlobal.toast.show('违规内容请邮件举报: support@brainstorm.app', 3)
-        }
-      })
-    } else {
-      GameGlobal.toast.show('违规内容请邮件举报: support@brainstorm.app', 3)
-    }
-  }
-
   onRender(ctx) {
     const sw = THEME.screenWidth; const sp = THEME.spacing; const fs = THEME.fontSize; const pad = sp.xl
     // 圆形返回按钮

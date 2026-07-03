@@ -4,7 +4,7 @@
 const { AnimationManager } = require('./animation')
 const THEME = require('../config/theme')
 const { GUIDE_STEPS, RULES_TEXT, checkGuided, markGuided } = require('../utils/guide')
-const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, drawGlowArc, fillShadowRoundedRect, wrapText, drawNoiseOverlay } = require('./draw-utils')
+const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, drawGlowArc, fillShadowRoundedRect, wrapText } = require('./draw-utils')
 const { getGameSkin, getAllSkins } = require('../utils/skins')
 const app = require('../app')
 
@@ -138,9 +138,6 @@ class Scene {
     ctx.fillStyle = glow
     ctx.fillRect(0, 0, w, h)
     ctx.restore()
-
-    // 纸质噪点纹理
-    drawNoiseOverlay(ctx, w, h)
   }
 
   // 滚动处理（子类在 onTouchStart/Move/End 中调用）
@@ -448,6 +445,22 @@ class Scene {
     fillRoundedRect(ctx, pad, y, btnW, btnH, THEME.btnRadius, THEME.btnSecondaryBg)
     strokeRoundedRect(ctx, pad, y, btnW, btnH, THEME.btnRadius, THEME.cardBorder, 1)
     drawCenteredText(ctx, '返回首页', cx, y + btnH / 2, { fontSize: fs.md, color: THEME.textSecondary, baseline: 'middle' })
+  }
+
+  // 举报入口
+  _openReport() {
+    if (typeof wx !== 'undefined' && wx.openCustomerServiceChat) {
+      wx.openCustomerServiceChat({
+        extInfo: { url: '' },
+        corpId: '',
+        success: () => {},
+        fail: () => {
+          GameGlobal.toast.show('违规内容请邮件举报: support@brainstorm.app', 3)
+        }
+      })
+    } else {
+      GameGlobal.toast.show('违规内容请邮件举报: support@brainstorm.app', 3)
+    }
   }
 
   // Overlay 触控处理（返回/引导/规则/皮肤/退出确认），返回 true 表示已处理
