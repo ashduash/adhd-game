@@ -8,6 +8,7 @@ const { generateDailyChallenge, getTodayString, canUseStreakFreeze, useStreakFre
 const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, drawCenteredGradientText, fillGradientRoundedRect, fillShadowRoundedRect } = require('../base/draw-utils')
 const { MODES } = require('../config/modes')
 const app = require('../app')
+const share = require('../utils/share')
 
 const EASING = { easeOut: t => 1 - Math.pow(1 - t, 3) }
 
@@ -42,6 +43,17 @@ class HomeScene extends Scene {
     this._loginLoading = false
     this._loginError = ''
     this._loginBtnRect = null
+    this._guestBtnRect = null
+    // 社交入口
+    this._shareBtnRect = null
+    this._groupRankBtnRect = null
+    this._subscribeBtnRect = null
+    // 好友挑战横幅
+    this._challengeBannerRect = null
+    this._challengeAcceptRect = null
+    this._challengeCloseRect = null
+    // 群排行占位弹层
+    this.showGroupRank = false
   }
 
   onEnter() {
@@ -74,6 +86,10 @@ class HomeScene extends Scene {
     this.canFreeze = canUseStreakFreeze(userData.lastPlayDate)
     this.nickName = wx.getStorageSync('nickName') || '玩家'
     this._updateDailyChallenge()
+    // 胶囊菜单/朋友圈分享的默认内容
+    share.setSharePayload(share.defaultPayload())
+    // 暂存好友挑战（供横幅展示，应战后清除）
+    this._pendingChallenge = app.getIncomingChallenge()
   }
 
   _updateDailyChallenge() {
@@ -123,6 +139,13 @@ class HomeScene extends Scene {
     }
   }
 
+  _handleGuest() {
+    app.setGuestMode(true)
+    this.showLogin = false
+    this._refresh()
+    GameGlobal.toast.show('已进入游客模式，登录后可参与全网排行')
+  }
+
   _renderLoginOverlay(ctx) {
     const sw = THEME.screenWidth; const sh = THEME.screenHeight
     const sp = THEME.spacing; const fs = THEME.fontSize
@@ -166,6 +189,15 @@ class HomeScene extends Scene {
       drawCenteredText(ctx, '微信一键登录', sw / 2, cy + btnH / 2, { fontSize: fs.md, fontWeight: '600', color: '#ffffff', baseline: 'middle' })
     }
     cy += btnH + sp.lg
+
+    // 游客体验按钮（跳过登录，直接试玩）
+    const gbtnW = cardW - sp.xl * 2; const gbtnH = 64 * THEME.rpx
+    const gbtnX = cardX + sp.xl; const gbtnY = cy
+    this._guestBtnRect = { x: gbtnX, y: gbtnY, w: gbtnW, h: gbtnH }
+    fillRoundedRect(ctx, gbtnX, gbtnY, gbtnW, gbtnH, THEME.btnRadius, 'rgba(255,255,255,0.06)')
+    strokeRoundedRect(ctx, gbtnX, gbtnY, gbtnW, gbtnH, THEME.btnRadius, THEME.cardBorder, 1)
+    drawCenteredText(ctx, '游客体验（成绩仅本地保存）', sw / 2, gbtnY + gbtnH / 2, { fontSize: fs.sm, color: THEME.textSecondary, baseline: 'middle' })
+    cy += gbtnH + sp.lg
 
     // 错误提示
     if (this._loginError) {
@@ -213,6 +245,16 @@ class HomeScene extends Scene {
     if (this.showLogin) {
       if (!this._touchMoved && this._loginBtnRect && this._hitRect(x, y, this._loginBtnRect)) {
         this._handleLogin()
+        return
+      }
+      if (!this._touchMoved && this._guestBtnRect && this._hitRect(x, y, this._guestBtnRect)) {
+        this._handleGuest()
+      }
+      return
+    }
+    if (this.showGroupRank) {
+      if (!this._touchMoved && this._groupRankCloseRect && this._hitRect(x, y, this._groupRankCloseRect)) {
+        this.showGroupRank = false
       }
       return
     }
@@ -270,6 +312,45 @@ class HomeScene extends Scene {
         return
       }
     }
+    // 好友挑战横幅：接受 / 关闭
+    if (this._pendingChallenge && this._pendingChallenge.mode) {
+      if (this._challengeAcceptRect && this._hitRect(x, y + sy, this._challengeAcceptRect)) {
+        this._acceptChallenge()
+        return
+      }
+      if (this._challengeCloseRect && this._hitRect(x, y + sy, this._challengeCloseRect)) {
+        app.clearIncomingChallenge()
+        this._pendingChallenge = null
+        return
+      }
+    }
+    // 社交入口
+    if (this._shareBtnRect && this._hitRect(x, y + sy, this._shareBtnRect)) {
+      share.shareToFriend(share.defaultPayload())
+      return
+    }
+    if (this._groupRankBtnRect && this._hitRect(x, y + sy, this._groupRankBtnRect)) {
+      this.showGroupRank = true
+      return
+    }
+    if (this._subscribeBtnRect && this._hitRect(x, y + sy, this._subscribeBtnRect)) {
+      share.requestSubscribe().then((res) => {
+        if (res && res.ok) GameGlobal.toast.show('订阅成功，次日召回提醒已开启', 2)
+      })
+      return
+    }
+  }
+
+  _acceptChallenge() {
+    const ch = this._pendingChallenge
+    if (!ch || !ch.mode) return
+    app.clearIncomingChallenge()
+    this._pendingChallenge = null
+    const target = ch.score != null ? `击败好友的 ${ch.score} 分！` : '好友在等你应战！'
+    // 带上 challenge 上下文，供结算屏比出胜负
+    if (ch.level != null) GameGlobal.sceneManager.push(ch.mode, { level: ch.level, challenge: ch })
+    else GameGlobal.sceneManager.push(ch.mode, { challenge: ch })
+    GameGlobal.toast.show('挑战开始 · ' + target, 2)
   }
 
   _hitRect(px, py, rect) {
@@ -291,6 +372,12 @@ class HomeScene extends Scene {
     this._trainingRect = null
     this._rankCardRect = null
     this._modeCardRects = []
+    this._shareBtnRect = null
+    this._groupRankBtnRect = null
+    this._subscribeBtnRect = null
+    this._challengeBannerRect = null
+    this._challengeAcceptRect = null
+    this._challengeCloseRect = null
 
     // === 顶部标题行（居中布局，避开微信菜单按钮） ===
     const alpha0 = this._getItemAlpha(itemIdx)
@@ -375,6 +462,23 @@ class HomeScene extends Scene {
       itemIdx++
     }
 
+    // === 好友挑战横幅（来自分享深链）===
+    if (this._pendingChallenge && this._pendingChallenge.mode) {
+      const alphaC = this._getItemAlpha(itemIdx)
+      const offC = this._getItemOffsetY(itemIdx)
+      if (alphaC > 0) {
+        ctx.save(); ctx.globalAlpha = alphaC
+        const ch = this._pendingChallenge
+        const modeName = (MODES.find(m => m.id === ch.mode) || {}).name || '专注力'
+        const h = 96 * THEME.rpx
+        this._challengeBannerRect = { x: pad, y: y + offC, w: sw - pad * 2, h }
+        this._drawChallengeBanner(ctx, pad, y + offC, sw - pad * 2, modeName, ch)
+        ctx.restore()
+      }
+      y += 96 * THEME.rpx + sp.md
+      itemIdx++
+    }
+
     // === 每日挑战 ===
     if (this.dailyChallenge) {
       const alpha4 = this._getItemAlpha(itemIdx)
@@ -399,6 +503,18 @@ class HomeScene extends Scene {
       ctx.restore()
     }
     y += 100 * THEME.rpx + sp.lg
+    itemIdx++
+
+    // === 社交分享（轻量行内操作栏）===
+    const alphaS = this._getItemAlpha(itemIdx)
+    const offS = this._getItemOffsetY(itemIdx)
+    if (alphaS > 0) {
+      ctx.save(); ctx.globalAlpha = alphaS
+      const h = 72 * THEME.rpx
+      this._drawSocialCard(ctx, pad, y + offS, sw - pad * 2)
+      ctx.restore()
+    }
+    y += 72 * THEME.rpx + sp.md
     itemIdx++
 
     // === 挑战模式标题 ===
@@ -447,6 +563,9 @@ class HomeScene extends Scene {
 
     // 登录遮罩（绘制在最顶层）
     if (this.showLogin) this._renderLoginOverlay(ctx)
+
+    // 群排行占位弹层（绘制在最顶层）
+    if (this.showGroupRank) this._drawGroupRankOverlay(ctx)
   }
 
   _drawRankCard(ctx, x, y, w) {
@@ -555,6 +674,144 @@ class HomeScene extends Scene {
       fontSize: THEME.fontSize.sm, fontWeight: '600', color: '#ffffff'
     })
     this._freezeWatchRect = { x: vbtnX, y: vbtnY, w: vbtnW, h: vbtnH }
+  }
+
+  _drawChallengeBanner(ctx, x, y, w, modeName, ch) {
+    const h = 96 * THEME.rpx
+    const r = THEME.cardRadius
+    const sp = THEME.spacing; const fs = THEME.fontSize; const rp = THEME.rpx
+
+    // 背景：极淡的青绿色调（暗示"来自外部/社交"，但不抢眼）
+    fillRoundedRect(ctx, x, y, w, h, r, 'rgba(123,165,160,0.08)')
+    strokeRoundedRect(ctx, x, y, w, h, r, 'rgba(123,165,160,0.2)', 1)
+
+    // 左侧文字（紧凑两行）
+    drawText(ctx, '好友发起挑战', x + sp.lg, y + 28 * rp, {
+      fontSize: fs.md, fontWeight: '700', color: '#9CC5C0'
+    })
+    const target = ch.score != null ? `目标 ${ch.score} 分` : '等你来战'
+    drawText(ctx, `${modeName} · ${target}`, x + sp.lg, y + 28 * rp + fs.md + 4 * rp, {
+      fontSize: fs.xs, color: THEME.textSecondary
+    })
+
+    // 接受按钮（右侧紧凑）
+    const btnW = 180 * rp; const btnH = 52 * rp
+    const btnX = x + w - sp.md - btnW; const btnY = y + (h - btnH) / 2
+    fillGradientRoundedRect(ctx, btnX, btnY, btnW, btnH, THEME.btnRadius, 135, [[0, THEME.primaryStart], [1, THEME.primaryEnd]])
+    drawCenteredText(ctx, '接受', btnX + btnW / 2, btnY + (btnH - fs.sm) / 2, {
+      fontSize: fs.sm, fontWeight: '600', color: '#ffffff'
+    })
+    this._challengeAcceptRect = { x: btnX, y: btnY, w: btnW, h: btnH }
+
+    // 关闭按钮（极简，右上角小圆点式）
+    const cw = 44 * rp
+    const closeX = x + w - sp.xs - cw; const closeY = y + sp.xs
+    drawCenteredText(ctx, '×', closeX + cw / 2, closeY + cw / 2, {
+      fontSize: fs.lg, color: THEME.textSecondary, baseline: 'middle'
+    })
+    this._challengeCloseRect = { x: closeX, y: closeY, w: cw, h: cw }
+  }
+
+  _drawSocialCard(ctx, x, y, w) {
+    // 轻量行内操作栏：无卡片容器、无 emoji、纯文字链接风格
+    // 用细分割线分隔，与整体暗色暖岩调融为一体而非"贴上去的补丁"
+    const h = 72 * THEME.rpx
+    const sp = THEME.spacing; const fs = THEME.fontSize; const rp = THEME.rpx
+
+    // 顶部细分割线（比 cardBorder 更淡，暗示"分区"而非"卡片边界"）
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    ctx.lineTo(x + w, y)
+    ctx.strokeStyle = THEME.cardBorderLight
+    ctx.lineWidth = 1
+    ctx.stroke()
+
+    // 三等分文字操作区，用竖线分隔
+    const colW = w / 3
+    const items = [
+      { label: '分享给好友', rect: '_shareBtnRect' },
+      { label: '群内排行', rect: '_groupRankBtnRect' },
+      { label: '每日提醒', rect: '_subscribeBtnRect' }
+    ]
+
+    for (let i = 0; i < items.length; i++) {
+      const cx = x + colW * i + colW / 2
+      drawCenteredText(ctx, items[i].label, cx, y + h / 2, {
+        fontSize: fs.sm,
+        fontWeight: '500',
+        color: THEME.textSecondary,
+        baseline: 'middle'
+      })
+      this[items[i].rect] = { x: x + colW * i, y, w: colW, h }
+      // 竖向分隔线（最后一项后不画）
+      if (i < items.length - 1) {
+        const divX = x + colW * (i + 1)
+        ctx.beginPath()
+        ctx.moveTo(divX, y + 16 * rp)
+        ctx.lineTo(divX, y + h - 16 * rp)
+        ctx.strokeStyle = THEME.cardBorderLight
+        ctx.lineWidth = 1
+        ctx.stroke()
+      }
+    }
+  }
+
+  _drawGroupRankOverlay(ctx) {
+    const sw = THEME.screenWidth; const sh = THEME.screenHeight
+    const sp = THEME.spacing; const fs = THEME.fontSize; const rp = THEME.rpx
+    ctx.fillStyle = THEME.overlayBg
+    ctx.fillRect(0, 0, sw, sh)
+    const cardW = sw * 0.86; const cardH = 480 * rp
+    const cardX = (sw - cardW) / 2; const cardY = (sh - cardH) / 2
+    fillRoundedRect(ctx, cardX, cardY, cardW, cardH, THEME.cardRadius, THEME.modalBg)
+    strokeRoundedRect(ctx, cardX, cardY, cardW, cardH, THEME.cardRadius, THEME.cardBorder, 1)
+    // 标题区（无 emoji，干净文字）
+    drawCenteredText(ctx, '群内排行', sw / 2, cardY + 44 * rp, {
+      fontSize: fs.lg, fontWeight: '700', color: THEME.textPrimary
+    })
+    drawCenteredText(ctx, '当前显示个人最佳成绩，好友排行需服务端支持', sw / 2, cardY + 44 * rp + fs.lg + sp.xs, {
+      fontSize: fs.xs, color: THEME.textSecondary
+    })
+    // 列表：模式名 + 最佳成绩（左对齐 + 右对齐）
+    const best = app.globalData.userData.bestScores || {}
+    let ry = cardY + 120 * rp
+    const rowH = 48 * rp
+    for (let i = 0; i < MODES.length; i++) {
+      const m = MODES[i]
+      const scores = best[m.id] || {}
+      const keys = Object.keys(scores)
+      let bestTxt = '—'
+      if (keys.length > 0) {
+        let maxV = null
+        for (const k of keys) {
+          const v = scores[k]
+          if (typeof v === 'number' && (maxV === null || v > maxV)) maxV = v
+        }
+        if (maxV !== null) bestTxt = String(maxV)
+      }
+      drawText(ctx, m.name, cardX + sp.lg, ry + (rowH - fs.sm) / 2, { fontSize: fs.sm, color: THEME.textPrimary })
+      drawText(ctx, bestTxt, cardX + cardW - sp.lg, ry + (rowH - fs.sm) / 2, {
+        fontSize: fs.sm, color: THEME.textAccent, align: 'right'
+      })
+      // 行间细分割线（最后一行后不画）
+      if (i < MODES.length - 1) {
+        ctx.beginPath()
+        ctx.moveTo(cardX + sp.lg, ry + rowH)
+        ctx.lineTo(cardX + cardW - sp.lg, ry + rowH)
+        ctx.strokeStyle = THEME.cardBorderLight
+        ctx.lineWidth = 1
+        ctx.stroke()
+      }
+      ry += rowH
+    }
+    // 关闭按钮
+    const btnW = cardW - sp.lg * 2; const btnH = 60 * rp
+    const btnX = cardX + sp.lg; const btnY = cardY + cardH - sp.lg - btnH
+    fillGradientRoundedRect(ctx, btnX, btnY, btnW, btnH, THEME.btnRadius, 135, [[0, THEME.primaryStart], [1, THEME.primaryEnd]])
+    drawCenteredText(ctx, '关闭', btnX + btnW / 2, btnY + (btnH - fs.sm) / 2, {
+      fontSize: fs.sm, fontWeight: '600', color: '#ffffff'
+    })
+    this._groupRankCloseRect = { x: btnX, y: btnY, w: btnW, h: btnH }
   }
 
   _drawDailyCard(ctx, x, y, w) {
