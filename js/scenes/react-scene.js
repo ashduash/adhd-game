@@ -99,7 +99,11 @@ class ReactScene extends Scene {
     if (this.gameState === 'playing') {
       for (let i = this.targets.length - 1; i >= 0; i--) {
         const t = this.targets[i]; const dx = x - t.x; const dy = y - t.y
-        if (dx * dx + dy * dy <= t.size * t.size) {
+        // 真实目标为圆形（半径 t.size），假目标为方形（半边长 t.size）；命中区与视觉统一
+        const hit = t.fake
+          ? (Math.abs(dx) <= t.size && Math.abs(dy) <= t.size)
+          : (dx * dx + dy * dy <= t.size * t.size)
+        if (hit) {
           if (t.fake) { this.falsePositives++; this.combo = 0; vibrate('heavy') }
           else { this.hits++; this.combo++; if (this.combo > this.maxCombo) this.maxCombo = this.combo; vibrate('light'); if (this.combo >= 3 && GameGlobal.audio) GameGlobal.audio.playSFX('combo'); this._hitTargets.push({ x: t.x, y: t.y, time: Date.now() }) }
           this.targets.splice(i, 1); return
@@ -114,7 +118,9 @@ class ReactScene extends Scene {
   _gameFinished() {
     this._stopTimers()
     const rating = getReactRating(this.hits, this.hits + this.misses, this.falsePositives)
-    this._finishGameWithRating({ rating, gameMode: 'react', level: this.difficulty, score: this.maxCombo })
+    const extra = { _maxCombo: this.maxCombo }
+    if (this.difficulty === 'expert') extra._expertRating = rating
+    this._finishGameWithRating({ rating, gameMode: 'react', level: this.difficulty, score: this.maxCombo, extra })
   }
 
   onRender(ctx) {

@@ -182,7 +182,9 @@ class MatchScene extends Scene {
     this._stopTimer(); if (this._deadlockTimer) { clearTimeout(this._deadlockTimer); this._deadlockTimer = null }
     const rating = getMatchRating(this.score, this.gridSize)
     const ratingLabel = this._deadlock ? '无可用步数' : undefined
-    this._finishGameWithRating({ rating, ratingLabel, gameMode: 'match', level: this.gridSize, score: this.score })
+    const cleared = this.grid.every(row => row.every(cell => cell === -1))
+    const extra = { _maxCombo: this.maxCombo, _cleared: cleared }
+    this._finishGameWithRating({ rating, ratingLabel, gameMode: 'match', level: this.gridSize, score: this.score, extra })
   }
 
   onRender(ctx) {

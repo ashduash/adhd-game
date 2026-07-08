@@ -142,7 +142,8 @@ class DualScene extends Scene {
     const topAcc = this.topTotal > 0 ? (this.topHits / this.topTotal * 100) : 0
     const bottomAcc = this.bottomTotal > 0 ? (this.bottomHits / this.bottomTotal * 100) : 0
     const rating = getDualRating(topAcc, bottomAcc)
-    this._finishGameWithRating({ rating, gameMode: 'dual', level: this.difficulty, score: this.topHits + this.bottomHits })
+    const extra = this.difficulty === 'expert' ? { _expertRating: rating } : {}
+    this._finishGameWithRating({ rating, gameMode: 'dual', level: this.difficulty, score: this.topHits + this.bottomHits, extra })
   }
 
   onRender(ctx) {

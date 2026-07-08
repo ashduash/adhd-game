@@ -10,8 +10,11 @@ const app = {
     userInfo: null,
     openid: null,
     unlockedSkins: ['night'],
+    guestMode: false,
     // 部署后端后填入真实地址，为空时自动回退到微信云函数
     serverUrl: '',
+    // 来自好友「挑战好友」深链的待应战信息（打开即清除）
+    incomingChallenge: null,
     userData: {
       rank: 'bronze',
       rankPoints: 0,
@@ -30,7 +33,7 @@ const app = {
       lastPlayDate: null,
       streak: 0,
       streakFreeze: 0,
-      dailyChallenge: { date: null, completed: false, mode: null, level: null },
+      dailyChallenge: { date: null, completed: false, mode: null, level: null, completedCount: 0, lastCountedDate: null },
       trainingPlan: { cycleStart: null, dayIndex: 0, completed: [] }
     }
   },
@@ -62,7 +65,7 @@ const app = {
 
   // 数据迁移：根据版本号补全缺失字段
   _migrateUserData(ud) {
-    const currentVersion = 2
+    const currentVersion = 3
     const version = ud._version || 1
 
     if (version < 2) {
@@ -75,6 +78,13 @@ const app = {
       if (!ud.dailyChallenge) ud.dailyChallenge = { date: null, completed: false, mode: null, level: null }
       if (!ud.trainingPlan) ud.trainingPlan = { cycleStart: null, dayIndex: 0, completed: [] }
       if (!ud.achievements) ud.achievements = []
+    }
+
+    if (version < 3) {
+      // v2 → v3: 每日挑战累计完成次数 / 去重标记
+      if (!ud.dailyChallenge) ud.dailyChallenge = { date: null, completed: false, mode: null, level: null, completedCount: 0, lastCountedDate: null }
+      if (ud.dailyChallenge.completedCount === undefined) ud.dailyChallenge.completedCount = 0
+      if (ud.dailyChallenge.lastCountedDate === undefined) ud.dailyChallenge.lastCountedDate = null
     }
 
     ud._version = currentVersion
@@ -99,6 +109,34 @@ const app = {
       return true
     }
     return false
+  },
+
+  // 合并成就所需的派生字段到 bestScores[mode]
+  // meta 中：布尔值做"或"累加（一旦达成永留），数值取最大值，
+  //         评级字段(_expertRating)保留历史最优(S>A>B>C>D)，其余取最新值
+  // undefined / null 直接忽略，避免覆盖已有数据
+  mergeModeMeta(mode, meta) {
+    if (!meta) return
+    const best = this.globalData.userData.bestScores[mode]
+    if (!best) return
+    const RATING_ORDER = { S: 5, A: 4, B: 3, C: 2, D: 1 }
+    let changed = false
+    for (const key of Object.keys(meta)) {
+      const val = meta[key]
+      if (val === undefined || val === null) continue
+      if (typeof val === 'boolean') {
+        if (!best[key]) { best[key] = true; changed = true }
+      } else if (typeof val === 'number') {
+        if (best[key] === undefined || val > best[key]) { best[key] = val; changed = true }
+      } else if (key === '_expertRating' && RATING_ORDER[val]) {
+        // 评级保留历史最优，避免后续低评级覆盖导致成就被误收回
+        const prev = RATING_ORDER[best[key]] || 0
+        if (RATING_ORDER[val] > prev) { best[key] = val; changed = true }
+      } else {
+        if (best[key] !== val) { best[key] = val; changed = true }
+      }
+    }
+    if (changed) this.saveUserData()
   },
 
   // 添加段位积分
@@ -145,12 +183,34 @@ const app = {
       wx.removeStorageSync(key)
     }
     this.globalData.openid = null
+    // 复位内存中的已解锁皮肤（避免清除数据后仍残留已解锁态）
+    this.globalData.unlockedSkins = ['night']
   },
 
   // 检查是否已通过微信登录（openid 为真实微信 openid，非 user_ 开头的伪 openid）
   isLoggedIn() {
     const openid = this.globalData.openid || wx.getStorageSync('openid')
     return !!openid && !openid.startsWith('user_')
+  },
+
+  // 游客模式：允许未登录直接试玩，成绩仅本地保存；排行/个人等社交功能引导登录
+  setGuestMode(v) {
+    this.globalData.guestMode = !!v
+  },
+
+  isGuestMode() {
+    return !!this.globalData.guestMode
+  },
+
+  // 好友「挑战好友」深链：暂存待应战信息
+  setIncomingChallenge(ch) {
+    this.globalData.incomingChallenge = ch || null
+  },
+  getIncomingChallenge() {
+    return this.globalData.incomingChallenge || null
+  },
+  clearIncomingChallenge() {
+    this.globalData.incomingChallenge = null
   },
 
   // 优先通过云函数获取 openid，serverUrl 可用时走 HTTP 服务端

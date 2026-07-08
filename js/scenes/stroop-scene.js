@@ -122,7 +122,7 @@ class StroopScene extends Scene {
     else if (accuracy >= 90 && sec <= t[2]) rating = 'B'
     else if (accuracy >= 75 && sec <= t[3]) rating = 'C'
     else rating = 'D'
-    this._finishGameWithRating({ rating, gameMode: 'stroop', level: this.level, score: this.correct })
+    this._finishGameWithRating({ rating, gameMode: 'stroop', level: this.level, score: this.correct, extra: { _perfect: this.correct === this.total && this.total > 0 } })
   }
 
   onRender(ctx) {

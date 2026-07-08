@@ -28,7 +28,12 @@ class SortScene extends Scene {
 
   onEnter() {
     this._initSkin()
-    this.level = this.params.level || 6
+    this.level = this.params.level || 9
+    // 防御：sort 仅支持完全平方数网格，非合法档时收敛到最近合法档
+    const SORT_LEVELS = [9, 16, 25, 36]
+    if (!SORT_LEVELS.includes(this.level)) {
+      this.level = SORT_LEVELS.reduce((p, c) => Math.abs(c - this.level) < Math.abs(p - this.level) ? c : p, SORT_LEVELS[0])
+    }
     this.initGame()
     this._checkGuide()
   }

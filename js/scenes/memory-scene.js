@@ -147,7 +147,11 @@ class MemoryScene extends Scene {
     this.correct = correct; this.total = this.level
     const accuracy = correct / this.level
     const rating = getMemoryRating(accuracy, perfect, inputTime, this.level)
-    this._finishGameWithRating({ rating, gameMode: 'memory', level: this.level, score: correct })
+    const extra = {
+      _perfect6: (this.level === 6 && perfect),
+      _perfect10: (this.level === 10 && perfect)
+    }
+    this._finishGameWithRating({ rating, gameMode: 'memory', level: this.level, score: correct, extra })
   }
 
   onRender(ctx) {

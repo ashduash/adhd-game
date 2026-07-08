@@ -65,9 +65,9 @@ class SceneManager {
 
   // 切换 Tab（替代 wx.switchTab）
   switchTab(tabName) {
-    // 未登录时禁止切换到排行/个人页
-    if (tabName !== 'home' && GameGlobal.app && !GameGlobal.app.isLoggedIn()) {
-      if (GameGlobal.toast) GameGlobal.toast.show('请先登录')
+    // 未登录且非游客时，禁止切换到排行/个人页（游客可浏览，社交动作再引导登录）
+    if (tabName !== 'home' && GameGlobal.app && !GameGlobal.app.isLoggedIn() && !GameGlobal.app.isGuestMode()) {
+      if (GameGlobal.toast) GameGlobal.toast.show('请先登录或游客体验')
       return
     }
     this._lockTouch()

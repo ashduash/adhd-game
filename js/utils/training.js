@@ -8,7 +8,7 @@ const TRAINING_DAYS = [
     games: [
       { mode: 'schulte', level: 4, skill: 'attention', name: '4×4数字风暴' },
       { mode: 'stroop', level: 15, skill: 'inhibition', name: '15题斯特鲁普' },
-      { mode: 'scan', level: 20, skill: 'visual_search', name: '20数闪电扫视' }
+      { mode: 'scan', level: 25, skill: 'visual_search', name: '25数闪电扫视' }
     ]
   },
   {
@@ -17,7 +17,7 @@ const TRAINING_DAYS = [
     desc: '锻炼工作记忆能力',
     games: [
       { mode: 'memory', level: 6, skill: 'working_memory', name: '6位记忆还原' },
-      { mode: 'sort', level: 8, skill: 'sequential', name: '8项序列排序' },
+      { mode: 'sort', level: 9, skill: 'sequential', name: '9项序列排序' },
       { mode: 'schulte', level: 5, skill: 'attention', name: '5×5数字风暴' }
     ]
   },
@@ -37,7 +37,7 @@ const TRAINING_DAYS = [
     desc: '培养模式识别和规划能力',
     games: [
       { mode: 'match', level: 5, skill: 'pattern', name: '5×5色彩消除' },
-      { mode: 'sort', level: 10, skill: 'sequential', name: '10项序列排序' },
+      { mode: 'sort', level: 16, skill: 'sequential', name: '16项序列排序' },
       { mode: 'memory', level: 8, skill: 'working_memory', name: '8位记忆还原' }
     ]
   },

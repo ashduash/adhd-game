@@ -23,8 +23,8 @@ const ACHIEVEMENTS = [
   { id: 'memory_perfect_10', name: '完美记忆', desc: '10位记忆还原零错误', icon: '🧠', category: '技巧', check: (u) => u.bestScores.memory._perfect10 },
   { id: 'match_combo_10', name: '连锁大师', desc: '色彩消除达到10连击', icon: '🔗', category: '技巧', check: (u) => u.bestScores.match._maxCombo >= 10 },
   { id: 'match_clear', name: '清盘高手', desc: '色彩消除清空整个棋盘', icon: '🌈', category: '技巧', check: (u) => u.bestScores.match._cleared },
-  { id: 'dual_expert', name: '分心大师', desc: '双线任务专家级获得S评级', icon: '🎯', category: '技巧', check: (u) => u.bestScores.dual.expert === 'S' },
-  { id: 'react_expert', name: '闪电反射', desc: '专家级反应训练获得S评级', icon: '⚡', category: '技巧', check: (u) => u.bestScores.react.expert === 'S' },
+  { id: 'dual_expert', name: '分心大师', desc: '双线任务专家级获得S评级', icon: '🎯', category: '技巧', check: (u) => u.bestScores.dual._expertRating === 'S' },
+  { id: 'react_expert', name: '闪电反射', desc: '专家级反应训练获得S评级', icon: '⚡', category: '技巧', check: (u) => u.bestScores.react._expertRating === 'S' },
   { id: 'all_modes', name: '全能战士', desc: '体验全部8种游戏模式', icon: '🏅', category: '技巧', check: (u) => {
     const modes = ['schulte', 'memory', 'scan', 'stroop', 'react', 'match', 'sort', 'dual']
     return modes.every(m => u.bestScores[m] && Object.keys(u.bestScores[m]).length > 0)

@@ -30,6 +30,11 @@ class ScanScene extends Scene {
   onEnter() {
     this._initSkin()
     this.level = this.params.level || 16
+    // 防御：scan 仅支持完全平方数网格，非合法档时收敛到最近合法档
+    const SCAN_LEVELS = [16, 25, 36, 49, 64]
+    if (!SCAN_LEVELS.includes(this.level)) {
+      this.level = SCAN_LEVELS.reduce((p, c) => Math.abs(c - this.level) < Math.abs(p - this.level) ? c : p, SCAN_LEVELS[0])
+    }
     this._setTimeLimit()
     this.initGame()
     this._checkGuide()
@@ -107,6 +112,7 @@ class ScanScene extends Scene {
   }
 
   _gameFinished() {
+    if (this.gameState === 'finished') return
     this._stopTimer()
     const accuracy = this.level > 0 ? (this.found / this.level * 100) : 0
     const completed = this.found >= this.level
