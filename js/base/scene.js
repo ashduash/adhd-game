@@ -6,12 +6,67 @@ const THEME = require('../config/theme')
 const { GUIDE_STEPS, RULES_TEXT, checkGuided, markGuided } = require('../utils/guide')
 const { fillRoundedRect, strokeRoundedRect, drawText, drawCenteredText, fillGradientRoundedRect, drawGlowArc, fillShadowRoundedRect, wrapText } = require('./draw-utils')
 const { getGameSkin, getAllSkins } = require('../utils/skins')
+const share = require('../utils/share')
 const app = require('../app')
+
+// 打卡日期辅助（避免使用 wx 之外的时区问题，用本地时间）
+function _todayStr() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+function _yesterdayStr() {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// 好友挑战比分判定
+// 时间类模式（schulte/sort）用时越短越好，其余模式分数越高越好
+const _TIME_MODES = { schulte: true, sort: true }
+const _RATING_ORDER = { S: 4, A: 3, B: 2, C: 1, D: 0 }
+
+function _formatChallengeScore(mode, score) {
+  if (_TIME_MODES[mode]) {
+    const sec = (typeof score === 'number' && isFinite(score)) ? score / 1000 : 0
+    return sec.toFixed(1) + 's'
+  }
+  return String(Math.round(score == null ? 0 : score))
+}
+
+// challenge: { mode, score, rating, level }  cfg: { gameMode, level, score, rating }
+// 同难度比分数，不同难度退化为比评级，保证公平性
+function _compareChallenge(challenge, cfg) {
+  const lowerIsBetter = !!_TIME_MODES[cfg.gameMode]
+  const sameLevel = challenge.level === cfg.level
+  let result
+  if (sameLevel) {
+    if (cfg.score === challenge.score) result = 'draw'
+    else if (lowerIsBetter) result = cfg.score < challenge.score ? 'win' : 'lose'
+    else result = cfg.score > challenge.score ? 'win' : 'lose'
+  } else {
+    const a = _RATING_ORDER[cfg.rating] || 0
+    const b = _RATING_ORDER[challenge.rating] || 0
+    result = a === b ? 'draw' : (a > b ? 'win' : 'lose')
+  }
+  return {
+    result,
+    myScore: cfg.score,
+    friendScore: challenge.score,
+    lowerIsBetter,
+    sameLevel,
+    mode: cfg.gameMode
+  }
+}
 
 class Scene {
   constructor(params) {
     this.params = params || {}
     this.animMgr = new AnimationManager()
+    // 每日挑战标记：首页会以 { daily: true } 方式进入，统一在此读取，覆盖所有模式
+    this._isDaily = !!(params && params.daily)
+    // 好友挑战上下文：首页「接受挑战」会携带 { mode, score, rating, level } 进入对应玩法
+    this._challenge = (params && params.challenge) ? params.challenge : null
+    this._challengeResult = null
     this._isTab = false
     this._active = false
     this._hasEntered = false
@@ -43,6 +98,7 @@ class Scene {
     this._homeBtnRect = null
     this._doubleBtnRect = null
     this._nextLevelBtnRect = null
+    this._challengeBtnRect = null
     this._contentTop = 0
     this.rating = ''
     this.ratingColor = ''
@@ -74,20 +130,38 @@ class Scene {
   // 完成每日挑战和训练计划标记（供子类 _gameFinished 调用）
   _completeDailyAndTraining() {
     const ud = app.globalData.userData
+    const today = _todayStr()
     // 每日挑战
     if (this._isDaily && ud.dailyChallenge) {
       ud.dailyChallenge.completed = true
+      // 累计完成次数（同一天重复挑战只计一次，避免刷成就）
+      if (ud.dailyChallenge.lastCountedDate !== today) {
+        ud.dailyChallenge.completedCount = (ud.dailyChallenge.completedCount || 0) + 1
+        ud.dailyChallenge.lastCountedDate = today
+      }
       app.saveUserData()
     }
     // 训练计划
     if (this.params && this.params.training && ud.trainingPlan) {
-      const now = new Date(); const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
       if (!ud.trainingPlan.completed) ud.trainingPlan.completed = []
       if (!ud.trainingPlan.completed.includes(today)) {
         ud.trainingPlan.completed.push(today)
         app.saveUserData()
       }
     }
+  }
+
+  // 连续打卡天数更新：每天首次完成一局时累加（断签则重置）
+  _updateStreak() {
+    const ud = app.globalData.userData
+    const today = _todayStr()
+    if (ud.lastPlayDate === today) return // 当天已计过
+    if (ud.lastPlayDate === _yesterdayStr()) {
+      ud.streak = (ud.streak || 0) + 1
+    } else {
+      ud.streak = 1 // 首次游玩或断签后重新开始
+    }
+    ud.lastPlayDate = today
   }
 
   // 触摸事件（子类重写）
@@ -401,6 +475,28 @@ class Scene {
     const cardW = sw - sp.xl * 2; const cardX = sp.xl; const cardH = cfg.cardH || 160 * THEME.rpx
     fillShadowRoundedRect(ctx, cardX, y, cardW, cardH, THEME.cardRadius, 'rgba(255,255,255,0.06)', 'rgba(0,0,0,0.2)', 15, 0, 4)
     strokeRoundedRect(ctx, cardX, y, cardW, cardH, THEME.cardRadius, 'rgba(255,255,255,0.1)', 1)
+    // 好友挑战结果横幅（应战好友后显示比分胜负）
+    if (this._challengeResult) {
+      const cr = this._challengeResult
+      const bannerH = 96 * THEME.rpx
+      const bg = cr.result === 'win' ? 'rgba(76,175,80,0.18)' : cr.result === 'lose' ? 'rgba(244,67,54,0.16)' : 'rgba(255,193,7,0.16)'
+      const bd = cr.result === 'win' ? 'rgba(76,175,80,0.45)' : cr.result === 'lose' ? 'rgba(244,67,54,0.45)' : 'rgba(255,193,7,0.45)'
+      const tc = cr.result === 'win' ? '#7ED957' : cr.result === 'lose' ? '#FF8A80' : '#FFD54F'
+      const title = cr.result === 'win' ? '挑战成功' : cr.result === 'lose' ? '惜败一筹' : '势均力敌'
+      fillRoundedRect(ctx, cardX, y, cardW, bannerH, THEME.cardRadius, bg)
+      strokeRoundedRect(ctx, cardX, y, cardW, bannerH, THEME.cardRadius, bd, 1)
+      drawCenteredText(ctx, title, cx, y + 30 * THEME.rpx, { fontSize: fs.md, fontWeight: '700', color: tc, baseline: 'middle' })
+      const myTxt = _formatChallengeScore(cr.mode, cr.myScore)
+      const frTxt = _formatChallengeScore(cr.mode, cr.friendScore)
+      const cmp = cr.lowerIsBetter
+        ? `你的 ${myTxt} · 好友 ${frTxt}（越短越好）`
+        : `你的 ${myTxt} · 好友 ${frTxt}`
+      drawCenteredText(ctx, cmp, cx, y + 62 * THEME.rpx, { fontSize: fs.sm, color: THEME.textSecondary, baseline: 'middle' })
+      if (!cr.sameLevel) {
+        drawCenteredText(ctx, '（难度不同，按评级比较）', cx, y + 82 * THEME.rpx, { fontSize: fs.xs, color: THEME.textSecondary, baseline: 'middle' })
+      }
+      y += bannerH + sp.md
+    }
     // 渲染统计内容
     if (cfg.renderStats) cfg.renderStats(ctx, cx, y)
     // 新纪录
@@ -445,6 +541,12 @@ class Scene {
     fillRoundedRect(ctx, pad, y, btnW, btnH, THEME.btnRadius, THEME.btnSecondaryBg)
     strokeRoundedRect(ctx, pad, y, btnW, btnH, THEME.btnRadius, THEME.cardBorder, 1)
     drawCenteredText(ctx, '返回首页', cx, y + btnH / 2, { fontSize: fs.md, color: THEME.textSecondary, baseline: 'middle' })
+    y += btnH + sp.md
+    // 挑战好友（带深链分享）
+    this._challengeBtnRect = { x: pad, y, w: btnW, h: btnH }
+    fillRoundedRect(ctx, pad, y, btnW, btnH, THEME.btnRadius, 'rgba(123,165,160,0.16)')
+    strokeRoundedRect(ctx, pad, y, btnW, btnH, THEME.btnRadius, 'rgba(123,165,160,0.3)', 1)
+    drawCenteredText(ctx, '挑战好友', cx, y + btnH / 2, { fontSize: fs.md, fontWeight: '600', color: '#9CC5C0', baseline: 'middle' })
   }
 
   // 举报入口
@@ -486,7 +588,7 @@ class Scene {
       if (this.showGuide) { markGuided(this._gameKey); this.showGuide = false; this.guideStep = 0; return true }
       if (this.showRules) { this.showRules = false; return true }
       if (this.showSkinPicker) { this.showSkinPicker = false; return true }
-      if (this.gameState === 'playing') {
+      if (['playing', 'showing', 'input', 'paused', 'paused_showing', 'paused_input'].includes(this.gameState)) {
         if (this.onPause) this.onPause()
         this.showExitConfirm = true
       } else {
@@ -520,7 +622,8 @@ class Scene {
   }
 
   // 通用结算流程：子类算好评级后调用此方法完成后续操作
-  // cfg: { rating, ratingLabel, gameMode, level, score, stats }
+  // cfg: { rating, ratingLabel, gameMode, level, score, stats, extra }
+  //   extra: 需要写入 bestScores[mode] 的成就派生字段（如 _maxCombo / _perfect / _cleared / _expertRating）
   _finishGameWithRating(cfg) {
     const { calcRankPoints } = require('../utils/scoring')
     this.rating = cfg.rating
@@ -530,19 +633,63 @@ class Scene {
     else if (this.rating === 'B') this.ratingLabel = '不错'
     else this.ratingLabel = '继续加油'
     if (cfg.ratingLabel) this.ratingLabel = cfg.ratingLabel
+
+    // 1) 连续打卡天数更新（每天首次完成计一次）
+    this._updateStreak()
+
+    // 2) 打卡积分加成：连续天数越多，积分倍率越高（详见 README）
+    const streak = app.globalData.userData.streak || 0
+    let multiplier = 1
+    let multLabel = ''
+    if (streak >= 30) { multiplier = 5; multLabel = '连续30天 · 积分×5' }
+    else if (streak >= 14) { multiplier = 3; multLabel = '连续14天 · 积分×3' }
+    else if (streak >= 7) { multiplier = 2; multLabel = '连续7天 · 积分×2' }
+
     this.isNewRecord = app.updateBestScore(cfg.gameMode, cfg.level, cfg.score)
     this.earnedPoints = calcRankPoints(cfg.gameMode, cfg.level, this.rating)
+    this.earnedPoints = Math.max(1, Math.round(this.earnedPoints * multiplier))
     const rankResult = app.addRankPoints(this.earnedPoints)
     app.globalData.userData.totalGames++
     app.saveUserData()
     app.syncScoreToCloud().catch(e => console.warn('分数同步失败:', e))
+
+    // 3) 合并成就派生字段（如 _maxCombo / _perfect / _cleared / _expertRating）
+    if (cfg.extra) app.mergeModeMeta(cfg.gameMode, cfg.extra)
+
+    // 4) 好友挑战比分判定（若本局是应战好友）
+    if (this._challenge && this._challenge.mode === cfg.gameMode) {
+      this._challengeResult = _compareChallenge(this._challenge, cfg)
+    } else {
+      this._challengeResult = null
+    }
+
+    // 5) 记录「挑战好友」深链上下文，并同步胶囊菜单分享内容
+    this._challengeCtx = { mode: cfg.gameMode, score: cfg.score, rating: this.rating, level: cfg.level }
+    const modeName = (require('../config/modes').MODES.find(m => m.id === cfg.gameMode) || {}).name || '专注力'
+    let shareTitle = `我在「${modeName}」拿了 ${_formatChallengeScore(cfg.gameMode, cfg.score)}，敢来挑战我吗？`
+    if (this._challengeResult) {
+      const r = this._challengeResult.result
+      if (r === 'win') shareTitle = `我在「${modeName}」赢了你，敢来扳回一城吗？`
+      else if (r === 'lose') shareTitle = `我在「${modeName}」惜败，再战一局！`
+      else shareTitle = `我在「${modeName}」和你打平，来分胜负！`
+    }
+    share.setSharePayload({
+      title: shareTitle,
+      imageUrl: '',
+      query: share.buildChallengeQuery(this._challengeCtx)
+    })
+
     this._completeDailyAndTraining()
     this.gameState = 'finished'
     this.doubleClaimed = false
-    app.tryShowInterstitial()
+    // 插屏延迟弹出，避免打断结算动画与新纪录提示
+    setTimeout(() => app.tryShowInterstitial(), 1200)
     if (rankResult.promoted) {
       if (GameGlobal.audio) GameGlobal.audio.playSFX('rankUp')
       setTimeout(() => GameGlobal.toast.show(`恭喜升段！你已晋升为${rankResult.newRank}段位！`, 3), 500)
+    }
+    if (multLabel) {
+      setTimeout(() => GameGlobal.toast.show(multLabel, 2), 600)
     }
   }
 
@@ -578,6 +725,13 @@ class Scene {
       const r = this._homeBtnRect
       const expanded = { x: r.x - 10, y: r.y - 20, w: r.w + 20, h: r.h + 40 }
       if (this._hit(x, sy, expanded)) { GameGlobal.sceneManager.switchTab('home'); return true }
+    }
+    if (this._challengeBtnRect && this._hit(x, sy, this._challengeBtnRect)) {
+      if (this._challengeCtx) {
+        const ok = share.shareChallenge(this._challengeCtx)
+        if (ok && GameGlobal.toast) GameGlobal.toast.show('已发起挑战，等好友来战！', 2)
+      }
+      return true
     }
     return false
   }
