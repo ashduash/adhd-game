@@ -163,7 +163,7 @@ class ProfileScene extends Scene {
           rank: 'bronze', rankPoints: 0,
           bestScores: { schulte: {}, memory: {}, scan: {}, stroop: {}, react: {}, match: {}, sort: {}, dual: {} },
           achievements: [], totalGames: 0, lastPlayDate: null, streak: 0, streakFreeze: 0,
-          dailyChallenge: { date: null, completed: false, mode: null, level: null },
+          dailyChallenge: { date: null, completed: false, mode: null, level: null, completedCount: 0, lastCountedDate: null },
           trainingPlan: { cycleStart: null, dayIndex: 0, completed: [] }
         }
         app.saveUserData()
@@ -193,26 +193,31 @@ class ProfileScene extends Scene {
           } catch (_) {}
           const fs = wx.getFileSystemManager()
           const base64 = fs.readFileSync(tempPath, 'base64')
-          // 安全检测（严格 fail-closed：检测不通过或异常时均拒绝上传）
+          // 安全检测（双后端：云函数 / 服务端 HTTP；均不可达时 fail-open，避免无后端时功能瘫痪）
           try {
             const check = await checkImage(base64, app.globalData.serverUrl)
-            if (!check.pass) {
+            if (check.pass === false && !check.unavailable) {
               GameGlobal.toast.show(check.reason || '图片检测未通过，请更换图片')
               return
             }
+            if (check.unavailable) {
+              // 后端不可用：仅本地保存，不阻断上传
+              GameGlobal.toast.show('安全检测暂不可用，已跳过')
+            }
           } catch (_) {
-            GameGlobal.toast.show('图片安全检测失败，请稍后重试')
-            return
+            // 检测异常不阻断本地保存
+            GameGlobal.toast.show('安全检测异常，已跳过')
           }
           const openid = app.getOpenid() || ''
           const useCloud = wx.cloud && GameGlobal._cloudReady
+          const hasServer = !!app.globalData.serverUrl
           try {
             let avatarUrl = ''
             if (useCloud) {
               const cloudPath = `avatars/${openid}_${Date.now()}.jpg`
               const uploadRes = await wx.cloud.uploadFile({ cloudPath, filePath: tempPath })
               avatarUrl = uploadRes.fileID
-            } else {
+            } else if (hasServer) {
               const avatarServerUrl = app.globalData.serverUrl + '/api/upload-avatar'
               const uploadRes = await new Promise((resolve, reject) => {
                 wx.request({
@@ -229,11 +234,17 @@ class ProfileScene extends Scene {
                 })
               })
               avatarUrl = app.globalData.serverUrl + uploadRes.avatarUrl
+            } else {
+              // 无云端、无服务端：本地保存 base64 data URL，profile 立即可见（游客 / 纯本地模式）
+              avatarUrl = 'data:image/jpeg;base64,' + base64
             }
             wx.setStorageSync('avatarUrl', avatarUrl)
             loadAvatar(avatarUrl, (img) => { this._avatarImage = img })
-            app.loginToServer(wx.getStorageSync('nickName'), avatarUrl).catch(() => {})
-            GameGlobal.toast.show('头像已更新')
+            if (hasServer || useCloud) {
+              app.loginToServer(wx.getStorageSync('nickName'), avatarUrl).catch(() => {})
+            }
+            const isLocal = avatarUrl.startsWith('data:')
+            GameGlobal.toast.show(isLocal ? '头像已更新（本地保存）' : '头像已更新')
           } catch (uploadErr) {
             GameGlobal.toast.show('上传失败: ' + (uploadErr.message || '未知错误'))
           }
@@ -267,9 +278,12 @@ class ProfileScene extends Scene {
             GameGlobal.toast.show('内容审核中...', 10)
             try {
               const check = await checkContent(nickName, app.globalData.serverUrl)
-              if (!check.pass) {
+              if (check.pass === false && !check.unavailable) {
                 GameGlobal.toast.show(check.reason, 2)
                 return
+              }
+              if (check.unavailable) {
+                GameGlobal.toast.show('内容安全检测暂不可用，已跳过')
               }
               wx.setStorageSync('nickName', nickName)
               app.syncScoreToCloud().catch(e => console.warn("分数同步失败:", e))
@@ -428,7 +442,7 @@ class ProfileScene extends Scene {
     y += btnH + sp.lg
 
     // 版本信息
-    drawCenteredText(ctx, '专注风暴 v1.0.2', sw / 2, y, { fontSize: fs.xs, color: THEME.textSecondary })
+    drawCenteredText(ctx, '专注风暴 v1.2.3', sw / 2, y, { fontSize: fs.xs, color: THEME.textSecondary })
     y += fs.xs + sp.xxl
 
     this._contentHeight = y

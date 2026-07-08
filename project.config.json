@@ -1,5 +1,6 @@
 {
   "description": "专注风暴 - 思维挑战游戏",
+  "version": "1.2.3",
   "minigameRoot": "./",
   "cloudfunctionRoot": "cloudfunctions/",
   "packOptions": {

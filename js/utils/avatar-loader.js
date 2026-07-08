@@ -79,6 +79,21 @@ function loadAvatar(url, callback) {
     return
   }
 
+  // base64 data URL（本地游客 / 无后端兜底）
+  if (url.startsWith('data:')) {
+    const img = wx.createImage()
+    img.onload = () => {
+      img.loaded = true
+      cache.set(url, img)
+      _notifyAll(url, img)
+    }
+    img.onerror = () => {
+      _notifyAll(url, null)
+    }
+    img.src = url
+    return
+  }
+
   // 无法识别的 URL 格式
   _notifyAll(url, null)
 }

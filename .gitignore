@@ -37,3 +37,6 @@ private.*
 # 本地数据
 server/db.json
 server/uploads/
+
+# WorkBuddy 内部数据（非项目源码）
+.workbuddy/

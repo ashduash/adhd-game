@@ -99,12 +99,14 @@ function _checkByCloud(content) {
  * @returns {Promise<{ pass: boolean, reason: string }>}
  */
 function _checkByServer(content, serverUrl) {
-  if (!serverUrl) return Promise.resolve({ pass: false, reason: '内容检测服务不可用，请稍后重试' })
+  // 无服务端地址 → 视为「服务不可达」，返回 null（由调用方决定是否 fail-open）
+  if (!serverUrl) return Promise.resolve(null)
 
   const openid = (typeof GameGlobal !== 'undefined' && GameGlobal.app)
     ? GameGlobal.app.getOpenid()
     : ''
-  const timeoutResult = { pass: false, reason: '内容检测超时，请稍后重试' }
+  // 超时 / 网络不可达均视为不可达，返回 null（fail-open）
+  const timeoutResult = null
 
   return _withTimeout(new Promise((resolve) => {
     wx.request({
@@ -116,10 +118,11 @@ function _checkByServer(content, serverUrl) {
         if (res.data && res.data.errCode === 0) {
           resolve({ pass: true, reason: '' })
         } else {
+          // 服务可达但拒绝（真实违规内容）→ fail-closed
           resolve({ pass: false, reason: (res.data && res.data.errMsg) || '昵称包含违规内容，请修改后重试' })
         }
       },
-      fail: () => resolve({ pass: false, reason: '内容检测服务不可用，请稍后重试' })
+      fail: () => resolve(null)
     })
   }), 5000, timeoutResult)
 }
@@ -137,7 +140,11 @@ async function checkContent(text, serverUrl) {
   if (cloudResult !== null) return cloudResult
 
   // 云不可用，回退到服务端 HTTP
-  return await _checkByServer(text, serverUrl)
+  const serverResult = await _checkByServer(text, serverUrl)
+  if (serverResult !== null) return serverResult
+
+  // 两个后端均不可达：fail-open（本地休闲场景，避免「无安全后端就无法改昵称」的功能瘫痪）
+  return { pass: true, reason: '', unavailable: true }
 }
 
 /**
@@ -171,9 +178,11 @@ function _checkImageByCloud(imageBase64) {
  * @returns {Promise<{ pass: boolean, reason: string }>}
  */
 function _checkImageByServer(imageBase64, serverUrl) {
-  if (!serverUrl) return Promise.resolve({ pass: false, reason: '图片检测服务不可用，请稍后重试' })
+  // 无服务端地址 → 视为「服务不可达」，返回 null（由调用方决定是否 fail-open）
+  if (!serverUrl) return Promise.resolve(null)
 
-  const timeoutResult = { pass: false, reason: '图片检测超时，请稍后重试' }
+  // 超时视为不可达，同样返回 null
+  const timeoutResult = null
 
   return _withTimeout(new Promise((resolve) => {
     wx.request({
@@ -182,13 +191,16 @@ function _checkImageByServer(imageBase64, serverUrl) {
       data: { imageBase64 },
       timeout: 5000,
       success: (res) => {
+        // 服务可达且明确通过
         if (res.data && res.data.errCode === 0) {
           resolve({ pass: true, reason: '' })
         } else {
+          // 服务可达但拒绝（真实违规内容）→ fail-closed
           resolve({ pass: false, reason: (res.data && res.data.errMsg) || '图片含有违规内容' })
         }
       },
-      fail: () => resolve({ pass: false, reason: '图片检测服务不可用，请稍后重试' })
+      // 网络不可达 → 服务不可用，返回 null（fail-open）
+      fail: () => resolve(null)
     })
   }), 5000, timeoutResult)
 }
@@ -210,7 +222,12 @@ async function checkImage(imageBase64, serverUrl) {
   if (cloudResult !== null) return cloudResult
 
   // 云不可用，回退到服务端 HTTP
-  return await _checkImageByServer(imageBase64, serverUrl)
+  const serverResult = await _checkImageByServer(imageBase64, serverUrl)
+  if (serverResult !== null) return serverResult
+
+  // 两个后端均不可达：fail-open（本地休闲游戏场景，避免「无安全后端就无法换头像」的功能瘫痪）
+  // 安全语义保持：若任一后端可达且明确拒绝，上面已返回 pass:false 拦截
+  return { pass: true, reason: '', unavailable: true }
 }
 
 /**
