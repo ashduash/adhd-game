@@ -60,6 +60,7 @@ const TabBar = require('./js/base/ui/tab-bar')
 const Toast = require('./js/base/ui/toast')
 const app = require('./js/app')
 const ads = require('./js/utils/ads')
+const share = require('./js/utils/share')
 const THEME = require('./js/config/theme')
 const AudioManager = require('./js/utils/audio')
 
@@ -87,6 +88,18 @@ app.init()
 // 初始化广告
 ads.createRewardedAd()
 ads.createInterstitialAd()
+
+// 初始化社交分享：开启分享菜单 + 注册被动转发/朋友圈回调
+share.registerGlobalShare()
+share.setSharePayload(share.defaultPayload())
+// 启动期解析分享深链（来自好友转发的挑战）
+try {
+  if (wx.getLaunchOptionsSync) {
+    const opt = wx.getLaunchOptionsSync()
+    const ch = share.parseLaunchQuery(opt && opt.query)
+    if (ch) app.setIncomingChallenge(ch)
+  }
+} catch (e) { /* 忽略 */ }
 
 // 初始化音频管理器
 const audioManager = new AudioManager()
@@ -177,13 +190,13 @@ wx.onTouchEnd((e) => {
 })
 
 // 暂停/恢复处理
-wx.onShow(() => {
-  // 重验证登录状态：若已失效，中断游戏返回首页显示登录遮罩
-  if (!app.isLoggedIn()) {
-    sceneManager.switchTab('home')
-    return
-  }
+wx.onShow((options) => {
   audioManager.resumeBGM()
+  // 从分享深链（挑战好友）冷启/热启：解析并暂存挑战
+  try {
+    const ch = share.parseLaunchQuery(options && options.query)
+    if (ch) app.setIncomingChallenge(ch)
+  } catch (e) { /* 忽略 */ }
   const scene = sceneManager.top()
   if (scene && scene.onResume) scene.onResume()
 })
